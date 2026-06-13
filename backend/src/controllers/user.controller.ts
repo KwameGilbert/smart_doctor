@@ -94,6 +94,14 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
       // Note: rating, status, licenseNumber are not updatable by doctor self-service
     }
 
+    // Validate specialties if provided (DOCTOR only)
+    const { specialties } = req.body;
+    if (specialties !== undefined && role === "DOCTOR") {
+      if (!Array.isArray(specialties)) {
+        return sendBadRequest(res, "specialties must be an array of specialty IDs.");
+      }
+    }
+
     // 3. Execute Transaction
     await db.transaction(async (trx) => {
       // Update core user record
@@ -109,6 +117,18 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
       // Update doctor profile table
       if (role === "DOCTOR" && Object.keys(doctorUpdate).length > 0) {
         await trx("doctors").where({ id: userId }).update(doctorUpdate);
+      }
+
+      // Update doctor specialties (clear and re-insert atomically)
+      if (role === "DOCTOR" && specialties !== undefined) {
+        await trx("doctorSpecialties").where({ doctorId: userId }).del();
+        if (specialties.length > 0) {
+          const rows = specialties.map((specialtyId: string) => ({
+            doctorId: userId,
+            specialtyId
+          }));
+          await trx("doctorSpecialties").insert(rows);
+        }
       }
     });
 
@@ -239,6 +259,14 @@ export const updateUserById = async (req: Request, res: Response, next: NextFunc
       }
     }
 
+    // Validate specialties if provided (DOCTOR only)
+    const { specialties } = req.body;
+    if (specialties !== undefined && role === "DOCTOR") {
+      if (!Array.isArray(specialties)) {
+        return sendBadRequest(res, "specialties must be an array of specialty IDs.");
+      }
+    }
+
     // 3. Execute Transaction
     await db.transaction(async (trx) => {
       if (Object.keys(userUpdate).length > 0) {
@@ -251,6 +279,18 @@ export const updateUserById = async (req: Request, res: Response, next: NextFunc
 
       if (role === "DOCTOR" && Object.keys(doctorUpdate).length > 0) {
         await trx("doctors").where({ id }).update(doctorUpdate);
+      }
+
+      // Update doctor specialties (clear and re-insert atomically)
+      if (role === "DOCTOR" && specialties !== undefined) {
+        await trx("doctorSpecialties").where({ doctorId: id }).del();
+        if (specialties.length > 0) {
+          const rows = specialties.map((specialtyId: string) => ({
+            doctorId: id,
+            specialtyId
+          }));
+          await trx("doctorSpecialties").insert(rows);
+        }
       }
     });
 

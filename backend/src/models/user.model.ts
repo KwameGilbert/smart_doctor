@@ -103,7 +103,7 @@ export class UserModelClass extends BaseModel<User> {
           "patients.emergencyContactPhone"
         );
     } else if (role === "DOCTOR") {
-      return query
+      const profile = await query
         .join("doctors", "users.id", "=", "doctors.id")
         .select(
           "users.id",
@@ -124,6 +124,17 @@ export class UserModelClass extends BaseModel<User> {
           "doctors.rating",
           "doctors.status"
         );
+
+      if (profile) {
+        // Attach specialties list to doctor profile
+        const specialties = await db("doctorSpecialties")
+          .join("specialties", "doctorSpecialties.specialtyId", "=", "specialties.id")
+          .where("doctorSpecialties.doctorId", userId)
+          .select("specialties.id", "specialties.name", "specialties.description");
+        profile.specialties = specialties;
+      }
+
+      return profile;
     } else if (role === "ADMIN") {
       return query
         .join("admins", "users.id", "=", "admins.id")

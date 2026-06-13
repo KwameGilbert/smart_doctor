@@ -3,6 +3,7 @@ import uploadRouter from "./upload.routes";
 import authRouter from "./auth.routes";
 import userRouter from "./user.routes";
 import adminRouter from "./admin.routes";
+import specialtyRouter from "./specialty.routes";
 
 const router = Router();
 
@@ -33,5 +34,8 @@ router.use("/admin", adminRouter);
 
 // Upload Routes
 router.use("/upload", uploadRouter);
+
+// Specialty Routes
+router.use("/specialties", specialtyRouter);
 
 export default router;

@@ -281,4 +281,109 @@ Accept: application/json
 # DELETE {{baseUrl}}/admin/users/{{targetDeleteId}}
 # Authorization: Bearer {{authToken}}
 
+###
 
+### ============================================================
+### SPECIALTY MANAGEMENT
+### ============================================================
+
+### 27. List All Specialties (Public)
+GET {{baseUrl}}/specialties
+Accept: application/json
+
+###
+
+### 28. Get Specialty by ID (Public)
+# @specialtyId = <uuid>
+# GET {{baseUrl}}/specialties/{{specialtyId}}
+# Accept: application/json
+
+###
+
+### 29. Create Specialty (Admin only)
+POST {{baseUrl}}/specialties
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Cardiology",
+  "description": "Deals with disorders of the heart and cardiovascular system."
+}
+
+###
+
+### 30. Create Another Specialty (Admin only)
+POST {{baseUrl}}/specialties
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Neurology",
+  "description": "Deals with disorders of the nervous system."
+}
+
+###
+
+### 31. Create Another Specialty (Admin only)
+POST {{baseUrl}}/specialties
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Dermatology",
+  "description": "Deals with skin conditions and disorders."
+}
+
+###
+
+### 32. Update Specialty (Admin only)
+# @specialtyId = <uuid>
+# PUT {{baseUrl}}/specialties/{{specialtyId}}
+# Authorization: Bearer {{authToken}}
+# Content-Type: application/json
+#
+# {
+#   "name": "Cardiologie",
+#   "description": "Updated description."
+# }
+
+###
+
+### 33. Delete Specialty (Admin only)
+# @specialtyId = <uuid>
+# DELETE {{baseUrl}}/specialties/{{specialtyId}}
+# Authorization: Bearer {{authToken}}
+
+###
+
+### ============================================================
+### DOCTOR SPECIALTY SELECTION (Doctor self-service)
+### ============================================================
+
+### 34. Doctor: Update Profile with Specialties
+### Replace <uuid1>, <uuid2> with actual specialty IDs from step 27
+PATCH {{baseUrl}}/users/me
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "bio": "Board-certified cardiologist with 10 years of experience.",
+  "consultationFee": 150,
+  "experienceYears": 10,
+  "specialties": []
+}
+
+###
+
+### 35. Admin: Update Doctor Profile + Assign Specialties
+# @targetDoctorId = <uuid>
+# PUT {{baseUrl}}/admin/users/{{targetDoctorId}}
+# Authorization: Bearer {{authToken}}
+# Content-Type: application/json
+#
+# {
+#   "status": "APPROVED",
+#   "specialties": ["<specialtyId1>", "<specialtyId2>"]
+# }
+
+###
