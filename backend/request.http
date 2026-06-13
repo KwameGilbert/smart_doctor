@@ -547,3 +547,142 @@ Authorization: Bearer {{authToken}}
 # Authorization: Bearer {{authToken}}
 
 ###
+
+### ============================================================
+### APPOINTMENTS (Booking & Lifecycle)
+### ============================================================
+
+### 51. Patient: Book an Appointment
+POST {{baseUrl}}/appointments
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "doctorId": "replace-with-approved-doctor-uuid",
+  "dateTime": "2026-06-16T10:00:00.000Z",
+  "reason": "Routine checkup"
+}
+
+###
+
+### 52. Patient/Doctor: List Own Appointments
+GET {{baseUrl}}/appointments?status=PENDING
+Authorization: Bearer {{authToken}}
+
+###
+
+### 53. Patient/Doctor/Admin: Get Appointment Details
+# @appointmentId = replace-with-appointment-uuid
+# GET {{baseUrl}}/appointments/{{appointmentId}}
+# Authorization: Bearer {{authToken}}
+
+###
+
+### 54. Doctor: Confirm Appointment (creates consultation)
+# @appointmentId = replace-with-appointment-uuid
+# PATCH {{baseUrl}}/appointments/{{appointmentId}}/confirm
+# Authorization: Bearer {{authToken}}
+
+###
+
+### 55. Doctor: Reject Appointment
+# @appointmentId = replace-with-appointment-uuid
+# PATCH {{baseUrl}}/appointments/{{appointmentId}}/reject
+# Authorization: Bearer {{authToken}}
+
+###
+
+### 56. Patient/Doctor/Admin: Cancel Appointment
+# @appointmentId = replace-with-appointment-uuid
+# PATCH {{baseUrl}}/appointments/{{appointmentId}}/cancel
+# Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+### CLINICAL CONSULTATIONS & NOTES
+### ============================================================
+
+### 57. Patient/Doctor: Get Consultation Details
+# @consultationId = replace-with-consultation-uuid
+# GET {{baseUrl}}/consultations/{{consultationId}}
+# Authorization: Bearer {{authToken}}
+
+###
+
+### 58. Doctor: Start Consultation Session
+# @consultationId = replace-with-consultation-uuid
+# PATCH {{baseUrl}}/consultations/{{consultationId}}/start
+# Authorization: Bearer {{authToken}}
+
+###
+
+### 59. Doctor: Update Consultation Notes (Only after start)
+# @consultationId = replace-with-consultation-uuid
+# PATCH {{baseUrl}}/consultations/{{consultationId}}/notes
+# Authorization: Bearer {{authToken}}
+# Content-Type: application/json
+
+{
+  "diagnosis": "Mild allergic rhinitis",
+  "notes": "Patient reports seasonal symptoms. Prescribed antihistamines.",
+  "recommendations": "Keep window closed during high pollen count days."
+}
+
+###
+
+### 60. Doctor: End Consultation Session (Completes appointment)
+# @consultationId = replace-with-consultation-uuid
+# PATCH {{baseUrl}}/consultations/{{consultationId}}/end
+# Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+### CHAT MESSAGES & VIDEO SESSIONS
+### ============================================================
+
+### 61. Patient/Doctor: Send Message in Consultation Thread
+# @consultationId = replace-with-consultation-uuid
+# POST {{baseUrl}}/consultations/{{consultationId}}/messages
+# Authorization: Bearer {{authToken}}
+# Content-Type: application/json
+
+{
+  "content": "Hello Doctor, I have joined the video session."
+}
+
+###
+
+### 62. Patient/Doctor: Get Paginated Consultation Messages
+# @consultationId = replace-with-consultation-uuid
+# GET {{baseUrl}}/consultations/{{consultationId}}/messages?page=1&limit=50
+# Authorization: Bearer {{authToken}}
+
+###
+
+### 63. Patient/Doctor: Get Video Session Details
+# @consultationId = replace-with-consultation-uuid
+# GET {{baseUrl}}/consultations/{{consultationId}}/video-session
+# Authorization: Bearer {{authToken}}
+
+###
+
+### 64. Patient/Doctor: Generate fresh video token
+# @consultationId = replace-with-consultation-uuid
+# POST {{baseUrl}}/consultations/{{consultationId}}/video-session/token
+# Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+### ADMIN: View All Appointments & Consultations
+### ============================================================
+
+### 65. Admin: List All Appointments
+GET {{baseUrl}}/admin/appointments
+Authorization: Bearer {{authToken}}
+
+###
+
+### 66. Admin: List All Consultations
+GET {{baseUrl}}/admin/consultations
+Authorization: Bearer {{authToken}}
+

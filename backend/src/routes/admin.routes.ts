@@ -2,6 +2,8 @@ import { Router } from "express";
 import { authenticate, authorize } from "../middleware/auth.middleware";
 import * as adminController from "../controllers/admin.controller";
 import * as unavailCtrl from "../controllers/unavailability.controller";
+import * as apptCtrl from "../controllers/appointment.controller";
+import * as consultCtrl from "../controllers/consultation.controller";
 
 const router = Router();
 
@@ -26,5 +28,9 @@ router.delete("/users/:id", adminController.deleteUser);
 router.get("/doctors/:id/unavailabilities", unavailCtrl.getDoctorUnavailabilities);
 router.post("/doctors/:id/unavailabilities", unavailCtrl.addDoctorUnavailability);
 router.delete("/doctors/:id/unavailabilities/:unavailId", unavailCtrl.deleteDoctorUnavailability);
+
+// Appointments & Consultations admin routes
+router.get("/appointments", apptCtrl.listAllAppointments);
+router.get("/consultations", consultCtrl.listAllConsultations);
 
 export default router;
