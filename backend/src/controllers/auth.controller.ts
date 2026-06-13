@@ -8,7 +8,7 @@ import { generateToken } from "../helpers/jwt.helper";
 import { generateOTP } from "../helpers/otp.helper";
 import { sendEmail } from "../services/email.service";
 import { sendSMS } from "../services/sms.service";
-import { sendSuccess, sendCreated, sendBadRequest } from "../helpers/response.helper";
+import { sendSuccess, sendCreated, sendBadRequest, sendForbidden } from "../helpers/response.helper";
 import { getOTPTemplate } from "../templates/otp.template";
 import { getResetTemplate } from "../templates/reset.template";
 
@@ -199,6 +199,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     const isPasswordMatch = await comparePassword(password, user.password!);
     if (!isPasswordMatch) {
       return sendBadRequest(res, "Invalid email or password.");
+    }
+
+    if (user.isActive === false) {
+      return sendForbidden(res, "Your account has been suspended. Please contact support.");
     }
 
     if (!user.isVerified) {

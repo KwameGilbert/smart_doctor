@@ -11,6 +11,7 @@ export interface User {
   avatarUrl?: string;
   role: "PATIENT" | "DOCTOR" | "ADMIN";
   isVerified: boolean;
+  isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -91,6 +92,7 @@ export class UserModelClass extends BaseModel<User> {
           "users.avatarUrl",
           "users.role",
           "users.isVerified",
+          "users.isActive",
           "users.createdAt",
           "users.updatedAt",
           "patients.dob",
@@ -112,6 +114,7 @@ export class UserModelClass extends BaseModel<User> {
           "users.avatarUrl",
           "users.role",
           "users.isVerified",
+          "users.isActive",
           "users.createdAt",
           "users.updatedAt",
           "doctors.bio",
@@ -133,6 +136,7 @@ export class UserModelClass extends BaseModel<User> {
           "users.avatarUrl",
           "users.role",
           "users.isVerified",
+          "users.isActive",
           "users.createdAt",
           "users.updatedAt"
         );

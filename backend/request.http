@@ -199,3 +199,86 @@ Content-Type: application/json
 # DELETE {{baseUrl}}/users/{{targetDeleteUserId}}
 # Authorization: Bearer {{authToken}}
 
+###
+
+###########################################################
+# DEDICATED ADMIN MANAGEMENT ENDPOINTS
+###########################################################
+
+### 19. Admin Panel: List All Patients
+GET {{baseUrl}}/admin/patients
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### 20. Admin Panel: Update Specific Patient Details
+@targetPatientId = c3d0d333-e34f-4f33-bcbe-0e01d227361c
+PUT {{baseUrl}}/admin/patients/{{targetPatientId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "firstName": "John Admin-Updated",
+  "allergies": "Penicillin, Latex",
+  "bloodGroup": "O-",
+  "gender": "Male"
+}
+
+###
+
+### 21. Admin Panel: List All Doctors
+GET {{baseUrl}}/admin/doctors
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### 22. Admin Panel: Update Specific Doctor Details
+@targetDoctorId = b2c0c222-d24f-4e33-acbe-9e01d227361b
+PUT {{baseUrl}}/admin/doctors/{{targetDoctorId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Sarah Admin-Updated",
+  "bio": "Expert cardiovascular surgeon.",
+  "consultationFee": 200.00,
+  "experienceYears": 18
+}
+
+###
+
+### 23. Admin Panel: Verify Doctor Status
+PATCH {{baseUrl}}/admin/doctors/{{targetDoctorId}}/status
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+
+### 24. Admin Panel: Suspend User (Patient or Doctor)
+# This sets users.isActive to false. Logging in as them will return 403.
+PATCH {{baseUrl}}/admin/users/{{targetPatientId}}/suspend
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### 25. Admin Panel: Activate User (Patient or Doctor)
+# This sets users.isActive to true.
+PATCH {{baseUrl}}/admin/users/{{targetPatientId}}/activate
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### 26. Admin Panel: Delete User Profile (Admin Override)
+# @targetDeleteId = <uuid>
+# DELETE {{baseUrl}}/admin/users/{{targetDeleteId}}
+# Authorization: Bearer {{authToken}}
+
+
