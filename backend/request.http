@@ -96,3 +96,106 @@ Content-Type: application/json
   "code": "123456",
   "newPassword": "BrandNewSecurePassword123!"
 }
+
+###
+
+###########################################################
+# PROFILE & USER MANAGEMENT ENDPOINTS
+###########################################################
+
+### Fill in the Bearer token after logging in:
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+### 10. Get Logged-In User Profile
+GET {{baseUrl}}/users/profile
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### 11. Update Logged-In Patient Profile
+PUT {{baseUrl}}/users/profile
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Johnathan",
+  "lastName": "Doel",
+  "phoneNumber": "+233240060001",
+  "dob": "1991-06-20",
+  "gender": "Male",
+  "bloodGroup": "O+",
+  "allergies": "Penicillin, Aspirin",
+  "emergencyContactName": "Jane Doe",
+  "emergencyContactPhone": "+233240000004"
+}
+
+###
+
+### 12. Update Logged-In Doctor Profile
+PUT {{baseUrl}}/users/profile
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Sarah-Jane",
+  "bio": "Consultant Cardiologist and Professor of Medicine.",
+  "consultationFee": 150.00,
+  "experienceYears": 16
+}
+
+###
+
+### 13. Admin: List All Users
+GET {{baseUrl}}/users
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### 14. Admin: List Only Doctors
+GET {{baseUrl}}/users?role=DOCTOR
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### 15. Admin: Get Specific User Profile by ID
+@targetUserId = b2c0c222-d24f-4e33-acbe-9e01d227361b
+GET {{baseUrl}}/users/{{targetUserId}}
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### 16. Admin: Update Specific User Profile by ID (Override)
+PUT {{baseUrl}}/users/{{targetUserId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Sarah Updated",
+  "bio": "Updated bio by admin override.",
+  "consultationFee": 160.00,
+  "experienceYears": 17,
+  "status": "APPROVED"
+}
+
+###
+
+### 17. Admin: Update Doctor Verification Status
+PATCH {{baseUrl}}/users/doctors/{{targetUserId}}/status
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED"
+}
+
+###
+
+### 18. Admin: Delete User by ID
+# @targetDeleteUserId = <uuid>
+# DELETE {{baseUrl}}/users/{{targetDeleteUserId}}
+# Authorization: Bearer {{authToken}}
+

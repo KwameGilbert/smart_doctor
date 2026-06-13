@@ -72,6 +72,85 @@ export class UserModelClass extends BaseModel<User> {
   }
 
   /**
+   * Find a user and their role-specific profile joined together.
+   */
+  async findFullProfile(userId: string, role: string): Promise<any> {
+    const query = db(this.tableName)
+      .where("users.id", userId)
+      .first();
+
+    if (role === "PATIENT") {
+      return query
+        .join("patients", "users.id", "=", "patients.id")
+        .select(
+          "users.id",
+          "users.email",
+          "users.phoneNumber",
+          "users.firstName",
+          "users.lastName",
+          "users.avatarUrl",
+          "users.role",
+          "users.isVerified",
+          "users.createdAt",
+          "users.updatedAt",
+          "patients.dob",
+          "patients.gender",
+          "patients.bloodGroup",
+          "patients.allergies",
+          "patients.emergencyContactName",
+          "patients.emergencyContactPhone"
+        );
+    } else if (role === "DOCTOR") {
+      return query
+        .join("doctors", "users.id", "=", "doctors.id")
+        .select(
+          "users.id",
+          "users.email",
+          "users.phoneNumber",
+          "users.firstName",
+          "users.lastName",
+          "users.avatarUrl",
+          "users.role",
+          "users.isVerified",
+          "users.createdAt",
+          "users.updatedAt",
+          "doctors.bio",
+          "doctors.consultationFee",
+          "doctors.licenseNumber",
+          "doctors.experienceYears",
+          "doctors.rating",
+          "doctors.status"
+        );
+    } else if (role === "ADMIN") {
+      return query
+        .join("admins", "users.id", "=", "admins.id")
+        .select(
+          "users.id",
+          "users.email",
+          "users.phoneNumber",
+          "users.firstName",
+          "users.lastName",
+          "users.avatarUrl",
+          "users.role",
+          "users.isVerified",
+          "users.createdAt",
+          "users.updatedAt"
+        );
+    }
+
+    return query;
+  }
+
+  /**
+   * Retrieve any user's profile with their role-specific information joined, automatically detecting role.
+   */
+  async findFullProfileById(userId: string): Promise<any> {
+    const user = await this.findById(userId);
+    if (!user) return undefined;
+    return this.findFullProfile(userId, user.role);
+  }
+
+  /**
    * Create a new User along with their role-specific profile (Patient or Doctor) in a transaction.
    */
   async createWithProfile(
