@@ -4,6 +4,8 @@ import authRouter from "./auth.routes";
 import userRouter from "./user.routes";
 import adminRouter from "./admin.routes";
 import specialtyRouter from "./specialty.routes";
+import availabilityRouter from "./availability.routes";
+import unavailabilityRouter from "./unavailability.routes";
 
 const router = Router();
 
@@ -37,5 +39,9 @@ router.use("/upload", uploadRouter);
 
 // Specialty Routes
 router.use("/specialties", specialtyRouter);
+
+// Doctor Availability & Unavailability Routes
+router.use("/doctors", availabilityRouter);
+router.use("/doctors", unavailabilityRouter);
 
 export default router;

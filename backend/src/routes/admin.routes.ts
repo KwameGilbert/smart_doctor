@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate, authorize } from "../middleware/auth.middleware";
 import * as adminController from "../controllers/admin.controller";
+import * as unavailCtrl from "../controllers/unavailability.controller";
 
 const router = Router();
 
@@ -20,5 +21,10 @@ router.patch("/doctors/:id/status", adminController.updateDoctorStatus);
 router.patch("/users/:id/suspend", adminController.suspendUser);
 router.patch("/users/:id/activate", adminController.activateUser);
 router.delete("/users/:id", adminController.deleteUser);
+
+// Doctor unavailability overrides (admin)
+router.get("/doctors/:id/unavailabilities", unavailCtrl.getDoctorUnavailabilities);
+router.post("/doctors/:id/unavailabilities", unavailCtrl.addDoctorUnavailability);
+router.delete("/doctors/:id/unavailabilities/:unavailId", unavailCtrl.deleteDoctorUnavailability);
 
 export default router;

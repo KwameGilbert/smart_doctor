@@ -387,3 +387,163 @@ Content-Type: application/json
 # }
 
 ###
+
+### ============================================================
+### DOCTOR AVAILABILITY — Weekly Schedule
+### ============================================================
+
+### 36. Doctor: Set Full Weekly Schedule (bulk replace)
+PUT {{baseUrl}}/doctors/me/availability
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "slots": [
+    { "dayOfWeek": 1, "startTime": "09:00", "endTime": "13:00" },
+    { "dayOfWeek": 1, "startTime": "14:00", "endTime": "17:00" },
+    { "dayOfWeek": 3, "startTime": "09:00", "endTime": "15:00" },
+    { "dayOfWeek": 5, "startTime": "10:00", "endTime": "14:00" }
+  ]
+}
+
+###
+
+### 37. Doctor: Add a Single Availability Slot
+POST {{baseUrl}}/doctors/me/availability
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "dayOfWeek": 2,
+  "startTime": "08:00",
+  "endTime": "12:00"
+}
+
+###
+
+### 38. Doctor: Update an Availability Slot
+# @slotId = <uuid>
+# PUT {{baseUrl}}/doctors/me/availability/{{slotId}}
+# Authorization: Bearer {{authToken}}
+# Content-Type: application/json
+#
+# {
+#   "startTime": "08:30",
+#   "endTime": "12:30"
+# }
+
+###
+
+### 39. Doctor: Delete an Availability Slot
+# @slotId = <uuid>
+# DELETE {{baseUrl}}/doctors/me/availability/{{slotId}}
+# Authorization: Bearer {{authToken}}
+
+###
+
+### 40. Doctor: Get Own Availability
+GET {{baseUrl}}/doctors/me/availability
+Authorization: Bearer {{authToken}}
+
+###
+
+### 41. Public: Get a Doctor's Weekly Schedule
+# @doctorId = <uuid>
+# GET {{baseUrl}}/doctors/{{doctorId}}/availability
+# Accept: application/json
+
+###
+
+### 42. Public: Get Available Booking Slots (next 14 days)
+# @doctorId = <uuid>
+# GET {{baseUrl}}/doctors/{{doctorId}}/available-slots?from=2026-06-16&days=14
+# Accept: application/json
+
+###
+
+### ============================================================
+### DOCTOR UNAVAILABILITY — Date Overrides
+### ============================================================
+
+### 43. Doctor: Block a Full Day
+POST {{baseUrl}}/doctors/me/unavailabilities
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-06-20",
+  "reason": "Attending medical conference"
+}
+
+###
+
+### 44. Doctor: Block a Partial Day (morning only)
+POST {{baseUrl}}/doctors/me/unavailabilities
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-06-23",
+  "startTime": "09:00",
+  "endTime": "11:00",
+  "reason": "Hospital rounds"
+}
+
+###
+
+### 45. Doctor: List Own Unavailabilities
+GET {{baseUrl}}/doctors/me/unavailabilities
+Authorization: Bearer {{authToken}}
+
+###
+
+### 46. Doctor: Update an Unavailability Block
+# @unavailId = <uuid>
+# PUT {{baseUrl}}/doctors/me/unavailabilities/{{unavailId}}
+# Authorization: Bearer {{authToken}}
+# Content-Type: application/json
+#
+# {
+#   "reason": "Updated reason"
+# }
+
+###
+
+### 47. Doctor: Delete an Unavailability Block
+# @unavailId = <uuid>
+# DELETE {{baseUrl}}/doctors/me/unavailabilities/{{unavailId}}
+# Authorization: Bearer {{authToken}}
+
+###
+
+### ============================================================
+### ADMIN: Manage Doctor Unavailabilities
+### ============================================================
+
+### 48. Admin: View a Doctor's Unavailabilities
+# @doctorId = <uuid>
+# GET {{baseUrl}}/admin/doctors/{{doctorId}}/unavailabilities
+# Authorization: Bearer {{authToken}}
+
+###
+
+### 49. Admin: Block a Date for a Doctor
+# @doctorId = <uuid>
+# POST {{baseUrl}}/admin/doctors/{{doctorId}}/unavailabilities
+# Authorization: Bearer {{authToken}}
+# Content-Type: application/json
+#
+# {
+#   "date": "2026-07-04",
+#   "reason": "Public holiday — system block"
+# }
+
+###
+
+### 50. Admin: Remove a Doctor Unavailability Block
+# @doctorId = <uuid>
+# @unavailId = <uuid>
+# DELETE {{baseUrl}}/admin/doctors/{{doctorId}}/unavailabilities/{{unavailId}}
+# Authorization: Bearer {{authToken}}
+
+###
