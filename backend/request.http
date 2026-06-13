@@ -1,0 +1,98 @@
+### Smart Doctor Auth API Testing Configuration
+
+@baseUrl = http://localhost:5000/v1
+
+### 1. Health Check
+GET {{baseUrl}}/health
+Accept: application/json
+
+###
+
+### 2. Base Gateway Route
+GET {{baseUrl}}/
+Accept: application/json
+
+###
+
+### 3. Register a New Patient
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "patient@example.com",
+  "password": "SecurePassword123!",
+  "firstName": "John",
+  "lastName": "Doe",
+  "phoneNumber": "+233240060001",
+  "role": "PATIENT"
+}
+
+###
+
+### 4. Register a New Doctor
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "doctor@example.com",
+  "password": "SecurePassword123!",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "phoneNumber": "+233240004002",
+  "role": "DOCTOR"
+}
+
+###
+
+### 5. Verify Account OTP (For patient or doctor)
+POST {{baseUrl}}/auth/verify
+Content-Type: application/json
+
+{
+  "emailOrPhone": "patient@example.com",
+  "code": "123456"
+}
+
+###
+
+### 6. Resend Verification OTP
+POST {{baseUrl}}/auth/resend-otp
+Content-Type: application/json
+
+{
+  "emailOrPhone": "patient@example.com"
+}
+
+###
+
+### 7. User Login
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "dr.davis@smartdoctor.com",
+  "password": "password123"
+}
+
+###
+
+### 8. Forgot Password (Request reset OTP)
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "patient@example.com"
+}
+
+###
+
+### 9. Reset Password using reset code
+POST {{baseUrl}}/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "patient@example.com",
+  "code": "123456",
+  "newPassword": "BrandNewSecurePassword123!"
+}

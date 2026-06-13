@@ -20,13 +20,16 @@ smart_doctor/
 │   │   │   └── auth.controller.ts
 │   │   ├── database/             # Knex database migrations and seed files
 │   │   │   ├── migrations/       # Database migrations
-│   │   │   │   └── 20260613000000_create_initial_tables.ts
+│   │   │   │   ├── 20260613000000_create_initial_tables.ts
+│   │   │   │   └── 20260613000001_create_otps_table.ts
 │   │   │   └── seeds/            # Initial database seeds
 │   │   ├── middleware/           # Express middlewares (auth, validation, error handler)
 │   │   │   ├── auth.middleware.ts
 │   │   │   └── error.middleware.ts
-│   │   ├── models/               # Domain-specific models/types/schemas (e.g., Zod)
-│   │   │   └── types.ts
+│   │   ├── models/               # Database model repositories and types
+│   │   │   ├── base.model.ts     # Generic CRUD base model
+│   │   │   ├── user.model.ts     # User database operations
+│   │   │   └── otp.model.ts      # OTP database operations
 │   │   ├── routes/               # Express routes mapping endpoints to controllers
 │   │   │   ├── auth.routes.ts
 │   │   │   └── index.ts          # Main router registry
@@ -50,11 +53,11 @@ smart_doctor/
 | :--- | :--- |
 | **`database/`** | Contains Knex database migrations and initial seed configurations. |
 | **`config/`** | Houses configurations for PostgreSQL client setup (via Knex), Agora, Cloudflare R2, etc. |
-| **`controllers/`** | Responsible for handling HTTP requests, extracting payloads, validating parameters, and returning HTTP responses. |
+| **`controllers/`** | Responsible for handling HTTP requests, validating payloads, communicating directly with the database (via Knex), executing business logic, and calling services for third-party integrations. |
 | **`middleware/`** | Functions that execute during the request-response lifecycle (e.g., token verification, CORS, error handling). |
 | **`models/`** | Contains custom schemas (like Zod validation schemas) or TypeScript interfaces/types matching requests/responses. |
 | **`routes/`** | Maps REST endpoints (e.g., `/api/v1/auth/register`) to their respective controller methods. |
-| **`services/`** | Contains all the core business logic. Keeps controllers thin and testable. Interacts directly with database models via Knex. |
+| **`services/`** | Strictly holds client wrappers for third-party integrations (e.g., Email, SMS, Firebase notifications, Cloud Storage, Agora). No database/model communications are allowed here. |
 | **`helpers/`** | Simple utility/helper functions that do not contain core business logic (e.g., hashing passwords, formatting dates). |
 | **`app.ts`** | Instantiates Express, configures standard middleware (CORS, body parser, helmet), registers routers, and sets up global error handling. |
 | **`server.ts`** | Imports the app and starts the HTTP server listening on the designated port. |

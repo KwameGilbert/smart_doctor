@@ -18,14 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
 
-// Health Check
-app.get("/health", (req: Request, res: Response) => {
-  res.status(200).json({
-    status: "success",
-    message: "Server is healthy",
-    timestamp: new Date().toISOString()
-  });
-});
+
 
 // API Base Route
 app.use("/v1", apiRouter);

@@ -2,6 +2,7 @@ import { Knex } from "knex";
 
 export async function seed(knex: Knex): Promise<void> {
   // 1. Delete existing data in reverse order of foreign key dependencies
+  await knex("otps").del();
   await knex("doctorSpecialties").del();
   await knex("specialties").del();
   await knex("doctors").del();
@@ -118,7 +119,6 @@ export async function seed(knex: Knex): Promise<void> {
     },
     {
       id: userIds.drDavis,
-      email: undefined, // uses User's fields, not duplicated in doctor
       bio: "Consultant Cardiologist specializing in interventional cardiology and cardiovascular diseases.",
       consultationFee: 120.00,
       licenseNumber: "MDC/CD/93021",
