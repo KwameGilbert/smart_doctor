@@ -4,6 +4,7 @@ import db from "../config/db";
 import { ConsultationModel } from "../models/consultation.model";
 import { AppointmentModel } from "../models/appointment.model";
 import { MessageModel } from "../models/message.model";
+import { emitToUser } from "../services/socket.service";
 import {
   sendSuccess,
   sendCreated,
@@ -54,7 +55,22 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
       attachmentType: attachmentType || null
     });
 
-    return sendCreated(res, message, "Message sent.");
+    // Fetch sender info to enrich the live WebSocket payload
+    const sender = await db("users").where({ id: userId }).first();
+
+    const messagePayload = {
+      ...message,
+      senderFirstName: sender?.firstName || "",
+      senderLastName: sender?.lastName || "",
+      senderAvatar: sender?.avatarUrl || null,
+      senderRole: sender?.role || ""
+    };
+
+    // Emit real-time message event to both participants
+    emitToUser(appointment.patientId, "new_message", messagePayload);
+    emitToUser(appointment.doctorId, "new_message", messagePayload);
+
+    return sendCreated(res, messagePayload, "Message sent.");
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,7 @@
 import https from "https";
 import crypto from "crypto";
 import db from "../config/db";
+import { emitToUser } from "./socket.service";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -386,6 +387,9 @@ export const sendNotification = async (
     const dbClient = trx || db;
     await dbClient("notifications").insert(dbPayload);
     console.log(`[Notification Service] Logged in DB: user=${userId}, title="${title}"`);
+
+    // Emit live WebSocket notification event
+    emitToUser(userId, "notification", dbPayload);
 
     // 2. Fetch target user's push tokens
     const user = await db("users").where({ id: userId }).first();
