@@ -20,18 +20,15 @@ export const generateAgoraToken = (
     throw new Error("AGORA_APP_ID and AGORA_APP_CERTIFICATE must be configured in environment variables.");
   }
 
-  const currentTimestamp = Math.floor(Date.now() / 1000);
-  const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
-
   const role = RtcRole.PUBLISHER || 1;
 
   return RtcTokenBuilder.buildTokenWithUid(
     appId,
-    appCertificate,
+    appCertificate, 
     channelName,
     uid,
     role,
     expirationTimeInSeconds,
-    privilegeExpiredTs
+    expirationTimeInSeconds
   );
 };
