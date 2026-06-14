@@ -42,17 +42,19 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
     }
 
     const { content, attachmentUrl, attachmentType } = req.body;
-    if (!content || content.trim().length === 0) {
-      return sendBadRequest(res, "Message content is required.");
+    const hasContent = content && content.trim().length > 0;
+    if (!hasContent && !attachmentUrl) {
+      return sendBadRequest(res, "Either message content or an attachment is required.");
     }
 
     const message = await MessageModel.create({
       id: crypto.randomUUID(),
       consultationId,
       senderId: userId,
-      content: content.trim(),
+      content: hasContent ? content.trim() : null,
       attachmentUrl: attachmentUrl || null,
-      attachmentType: attachmentType || null
+      attachmentType: attachmentType || null,
+      status: "SENT"
     });
 
     // Fetch sender info to enrich the live WebSocket payload
@@ -63,7 +65,10 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
       senderFirstName: sender?.firstName || "",
       senderLastName: sender?.lastName || "",
       senderAvatar: sender?.avatarUrl || null,
-      senderRole: sender?.role || ""
+      senderRole: sender?.role || "",
+      status: "SENT",
+      deliveredAt: null,
+      readAt: null
     };
 
     // Emit real-time message event to both participants
@@ -133,6 +138,95 @@ export const getMessages = async (req: Request, res: Response, next: NextFunctio
         totalPages: Math.ceil(total / limit)
       }
     }, "Messages retrieved.");
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /consultations/:id/messages/delivered
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Mark all messages in a consultation as DELIVERED (sent by the other user).
+ */
+export const markAllAsDelivered = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const role = req.user!.role;
+    const { id: consultationId } = req.params;
+
+    const consultation = await ConsultationModel.findById(consultationId);
+    if (!consultation) return sendNotFound(res, "Consultation not found.");
+
+    const appointment = await AppointmentModel.findById(consultation.appointmentId);
+    if (!appointment) return sendNotFound(res, "Associated appointment not found.");
+
+    if (role !== "ADMIN" && appointment.patientId !== userId && appointment.doctorId !== userId) {
+      return sendForbidden(res, "Access denied.");
+    }
+
+    const now = new Date().toISOString();
+
+    await db("messages")
+      .where({ consultationId })
+      .andWhereNot({ senderId: userId })
+      .andWhere({ status: "SENT" })
+      .update({
+        status: "DELIVERED",
+        deliveredAt: now
+      });
+
+    // Notify participants via WebSocket
+    emitToUser(appointment.patientId, "messages_delivered", { consultationId, deliveredAt: now });
+    emitToUser(appointment.doctorId, "messages_delivered", { consultationId, deliveredAt: now });
+
+    return sendSuccess(res, null, "Messages marked as delivered.");
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /consultations/:id/messages/read
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Mark all messages in a consultation as READ (sent by the other user).
+ */
+export const markAllAsRead = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const role = req.user!.role;
+    const { id: consultationId } = req.params;
+
+    const consultation = await ConsultationModel.findById(consultationId);
+    if (!consultation) return sendNotFound(res, "Consultation not found.");
+
+    const appointment = await AppointmentModel.findById(consultation.appointmentId);
+    if (!appointment) return sendNotFound(res, "Associated appointment not found.");
+
+    if (role !== "ADMIN" && appointment.patientId !== userId && appointment.doctorId !== userId) {
+      return sendForbidden(res, "Access denied.");
+    }
+
+    const now = new Date().toISOString();
+
+    await db("messages")
+      .where({ consultationId })
+      .andWhereNot({ senderId: userId })
+      .andWhereNot({ status: "READ" })
+      .update({
+        status: "READ",
+        readAt: now,
+        deliveredAt: db.raw("COALESCE(deliveredAt, ?)", [now])
+      });
+
+    // Notify participants via WebSocket
+    emitToUser(appointment.patientId, "messages_read", { consultationId, readAt: now });
+    emitToUser(appointment.doctorId, "messages_read", { consultationId, readAt: now });
+
+    return sendSuccess(res, null, "Messages marked as read.");
   } catch (err) {
     next(err);
   }

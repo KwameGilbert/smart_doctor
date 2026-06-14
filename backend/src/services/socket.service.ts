@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import http from "http";
 import { verifyToken } from "../helpers/jwt.helper";
+import db from "../config/db";
 
 let io: Server | null = null;
 const userSockets = new Map<string, Set<string>>(); // userId -> Set of socketIds
@@ -60,6 +61,81 @@ export const initSocketServer = (server: http.Server): Server => {
           senderId: userId,
           isTyping: !!data.isTyping
         });
+      }
+    });
+
+    // Real-time message status updates (Delivered receipts)
+    socket.on("deliver_all_messages", async (data: { consultationId: string }) => {
+      try {
+        if (!data || !data.consultationId) return;
+
+        const consultation = await db("consultations").where({ id: data.consultationId }).first();
+        if (!consultation) return;
+
+        const appointment = await db("appointments").where({ id: consultation.appointmentId }).first();
+        if (!appointment) return;
+
+        if (appointment.patientId !== userId && appointment.doctorId !== userId) return;
+
+        const now = new Date().toISOString();
+
+        await db("messages")
+          .where({ consultationId: data.consultationId })
+          .andWhereNot({ senderId: userId })
+          .andWhere({ status: "SENT" })
+          .update({
+            status: "DELIVERED",
+            deliveredAt: now
+          });
+
+        io?.to(`user:${appointment.patientId}`).emit("messages_delivered", {
+          consultationId: data.consultationId,
+          deliveredAt: now
+        });
+        io?.to(`user:${appointment.doctorId}`).emit("messages_delivered", {
+          consultationId: data.consultationId,
+          deliveredAt: now
+        });
+      } catch (err) {
+        console.error("Error processing deliver_all_messages socket event:", err);
+      }
+    });
+
+    // Real-time message status updates (Read receipts)
+    socket.on("read_all_messages", async (data: { consultationId: string }) => {
+      try {
+        if (!data || !data.consultationId) return;
+
+        const consultation = await db("consultations").where({ id: data.consultationId }).first();
+        if (!consultation) return;
+
+        const appointment = await db("appointments").where({ id: consultation.appointmentId }).first();
+        if (!appointment) return;
+
+        if (appointment.patientId !== userId && appointment.doctorId !== userId) return;
+
+        const now = new Date().toISOString();
+
+        await db("messages")
+          .where({ consultationId: data.consultationId })
+          .andWhereNot({ senderId: userId })
+          .andWhereNot({ status: "READ" })
+          .update({
+            status: "READ",
+            readAt: now,
+            deliveredAt: db.raw("COALESCE(deliveredAt, ?)", [now])
+          });
+
+        io?.to(`user:${appointment.patientId}`).emit("messages_read", {
+          consultationId: data.consultationId,
+          readAt: now
+        });
+        io?.to(`user:${appointment.doctorId}`).emit("messages_read", {
+          consultationId: data.consultationId,
+          readAt: now
+        });
+      } catch (err) {
+        console.error("Error processing read_all_messages socket event:", err);
       }
     });
 
