@@ -9,6 +9,7 @@ import {
   sendNotFound,
   sendServerError
 } from "../helpers/response.helper";
+import { logAction } from "../services/audit.service";
 
 /**
  * Get current user's profile with joined role-specific details.
@@ -136,6 +137,9 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
 
     // 4. Fetch and return full updated profile
     const updatedProfile = await UserModel.findFullProfile(userId, role);
+    // Log action to audit logs
+    await logAction(userId, "PROFILE_UPDATED", `Updated profile for user: ${userId} (${role})`, req.ip);
+
     return sendSuccess(res, updatedProfile, "Profile updated successfully.");
   } catch (error: any) {
     next(error);
@@ -299,6 +303,9 @@ export const updateUserById = async (req: Request, res: Response, next: NextFunc
     });
 
     const updatedProfile = await UserModel.findFullProfile(id, role);
+    // Log action to audit logs
+    await logAction(req.user!.id, "USER_PROFILE_OVERRIDDEN", `Admin updated profile for user: ${id} (${role})`, req.ip);
+
     return sendSuccess(res, updatedProfile, "User updated successfully.");
   } catch (error: any) {
     next(error);
@@ -319,6 +326,9 @@ export const deleteUserById = async (req: Request, res: Response, next: NextFunc
 
     // BaseModel.delete handles deletion (which cascades automatically in the DB layer)
     await UserModel.delete(id);
+
+    // Log action to audit logs
+    await logAction(req.user!.id, "USER_DELETED", `Admin deleted user ID: ${id}`, req.ip);
 
     return sendSuccess(res, null, "User and associated profile deleted successfully.");
   } catch (error: any) {
@@ -349,6 +359,9 @@ export const updateDoctorStatus = async (req: Request, res: Response, next: Next
     await DoctorModel.update(id, { status });
 
     const fullProfile = await UserModel.findFullProfile(id, "DOCTOR");
+    // Log action to audit logs
+    await logAction(req.user!.id, "DOCTOR_STATUS_UPDATED", `Admin updated doctor status of ID: ${id} to ${status}`, req.ip);
+
     return sendSuccess(res, fullProfile, `Doctor status updated to ${status} successfully.`);
   } catch (error: any) {
     next(error);

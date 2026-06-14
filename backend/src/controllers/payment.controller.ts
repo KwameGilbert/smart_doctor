@@ -5,6 +5,7 @@ import { PaymentModel } from "../models/payment.model";
 import { TransactionModel } from "../models/transaction.model";
 import { verifyTransaction } from "../services/paystack.service";
 import { sendNotificationTemplate } from "../services/notification.service";
+import { logAction } from "../services/audit.service";
 import {
   sendSuccess,
   sendBadRequest,
@@ -109,6 +110,9 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
       await sendNotificationTemplate(payment.patientId, "PAYMENT_SUCCESS", { amount: payment.amount });
       await sendNotificationTemplate(appointment.doctorId, "APPOINTMENT_CONFIRMED", { patientName, amount: payment.amount });
     }
+
+    // Log action to audit logs
+    await logAction(payment.patientId, "PAYMENT_VERIFIED", `Verified payment ref: ${reference} of amount: ${payment.amount} for appointment: ${payment.appointmentId}`, req.ip);
 
     return sendSuccess(res, updatedPayment, "Payment verified successfully. Appointment confirmed.");
   } catch (err) {

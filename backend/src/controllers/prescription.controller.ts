@@ -3,6 +3,7 @@ import crypto from "crypto";
 import db from "../config/db";
 import { PrescriptionModel } from "../models/prescription.model";
 import { sendNotificationTemplate } from "../services/notification.service";
+import { logAction } from "../services/audit.service";
 import {
   sendSuccess,
   sendCreated,
@@ -82,7 +83,8 @@ export const createPrescription = async (req: Request, res: Response, next: Next
       const doctorName = `${doctorUser.firstName} ${doctorUser.lastName}`;
       await sendNotificationTemplate(patientId, "PRESCRIPTION_CREATED", { doctorName });
     }
-
+    // Log action to audit logs
+    await logAction(doctorId, "PRESCRIPTION_CREATED", `Created prescription ID: ${prescriptionId} for patient ID: ${patientId}`, req.ip);
     return sendCreated(
       res,
       { ...newPrescription, items: newItems },
@@ -258,7 +260,8 @@ export const updatePrescription = async (req: Request, res: Response, next: Next
       const doctorName = `${doctorUser.firstName} ${doctorUser.lastName}`;
       await sendNotificationTemplate(updated.patientId, "PRESCRIPTION_UPDATED", { doctorName });
     }
-
+    // Log action to audit logs
+    await logAction(doctorId, "PRESCRIPTION_UPDATED", `Updated prescription ID: ${id} for patient ID: ${prescription.patientId}`, req.ip);
     return sendSuccess(
       res,
       { ...updated, items: updatedItems },
@@ -289,6 +292,10 @@ export const deletePrescription = async (req: Request, res: Response, next: Next
     }
 
     await PrescriptionModel.delete(id);
+
+    // Log action to audit logs
+    await logAction(userId, "PRESCRIPTION_DELETED", `Deleted prescription ID: ${id} (Role: ${role})`, req.ip);
+
     return sendNoContent(res);
   } catch (err) {
     next(err);

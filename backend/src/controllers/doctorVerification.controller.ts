@@ -10,6 +10,7 @@ import {
   sendCreated
 } from "../helpers/response.helper";
 import { sendNotificationTemplate } from "../services/notification.service";
+import { logAction } from "../services/audit.service";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /doctor-verifications
@@ -56,6 +57,10 @@ export const createVerification = async (req: Request, res: Response, next: Next
     };
 
     await DoctorVerificationModel.create(newVerification);
+
+    // Log action to audit logs
+    await logAction(doctorId, "VERIFICATION_SUBMITTED", `Submitted verification document of type: ${documentType}`, req.ip);
+
     return sendCreated(res, newVerification, "Verification document submitted successfully.");
   } catch (err) {
     next(err);
@@ -207,6 +212,9 @@ export const reviewVerification = async (req: Request, res: Response, next: Next
         comments: comments ? ` Comments: ${comments}` : ""
       }
     );
+
+    // Log action to audit logs
+    await logAction(adminId, "VERIFICATION_REVIEWED", `Reviewed verification ID: ${id} as ${status}. Comments: ${comments || "None"}`, req.ip);
 
     return sendSuccess(res, updated, `Doctor verification reviewed and ${status.toLowerCase()} successfully.`);
   } catch (err) {

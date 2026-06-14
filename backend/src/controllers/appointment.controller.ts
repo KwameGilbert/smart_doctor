@@ -7,6 +7,7 @@ import { ConsultationModel } from "../models/consultation.model";
 import { AvailabilityModel } from "../models/availability.model";
 import { initializeTransaction } from "../services/paystack.service";
 import { sendNotificationTemplate } from "../services/notification.service";
+import { logAction } from "../services/audit.service";
 import {
   sendSuccess,
   sendCreated,
@@ -174,6 +175,9 @@ export const bookAppointment = async (req: Request, res: Response, next: NextFun
       await sendNotificationTemplate(doctorId, "APPOINTMENT_REQUEST", { patientName });
     }
 
+    // Log action to audit logs
+    await logAction(patientId, "APPOINTMENT_BOOKED", `Booked appointment ID: ${appointmentId} with doctor ID: ${doctorId}`, req.ip);
+
     return sendCreated(
       res,
       {
@@ -318,6 +322,9 @@ export const confirmAppointment = async (req: Request, res: Response, next: Next
       await sendNotificationTemplate(appointment.patientId, "APPOINTMENT_CONFIRMED", { doctorName });
     }
 
+    // Log action to audit logs
+    await logAction(doctorId, "APPOINTMENT_CONFIRMED", `Confirmed appointment ID: ${id} with patient ID: ${appointment.patientId}`, req.ip);
+
     return sendSuccess(res, { ...updated, consultation }, "Appointment confirmed. Consultation created.");
   } catch (err) {
     next(err);
@@ -349,6 +356,9 @@ export const rejectAppointment = async (req: Request, res: Response, next: NextF
       const doctorName = `${doctorUser.firstName} ${doctorUser.lastName}`;
       await sendNotificationTemplate(appointment.patientId, "APPOINTMENT_REJECTED", { doctorName });
     }
+
+    // Log action to audit logs
+    await logAction(doctorId, "APPOINTMENT_REJECTED", `Rejected appointment ID: ${id} with patient ID: ${appointment.patientId}`, req.ip);
 
     return sendSuccess(res, updated, "Appointment rejected.");
   } catch (err) {
@@ -399,6 +409,9 @@ export const cancelAppointment = async (req: Request, res: Response, next: NextF
         await sendNotificationTemplate(recipientId, "APPOINTMENT_CANCELLED", { date: formattedDate, cancelledBy });
       }
     }
+
+    // Log action to audit logs
+    await logAction(userId, "APPOINTMENT_CANCELLED", `Cancelled appointment ID: ${id} (Role: ${role})`, req.ip);
 
     return sendSuccess(res, updated, "Appointment cancelled.");
   } catch (err) {

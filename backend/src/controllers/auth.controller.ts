@@ -11,6 +11,7 @@ import { sendSMS } from "../services/sms.service";
 import { sendSuccess, sendCreated, sendBadRequest, sendForbidden } from "../helpers/response.helper";
 import { getOTPTemplate } from "../templates/otp.template";
 import { getResetTemplate } from "../templates/reset.template";
+import { logAction } from "../services/audit.service";
 
 /**
  * Handle user registration request.
@@ -63,6 +64,9 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       }
     );
 
+    // Log action to audit logs
+    await logAction(userId, "USER_REGISTERED", `User registered with email: ${email} and role: ${role}`, req.ip);
+
     // Send OTP (non-blocking, logged in dev console)
     const otpMessage = `Your Smart Doctor verification code is: ${otpCode}. It is valid for 10 minutes.`;
     if (phoneNumber) {
@@ -112,6 +116,9 @@ export const verify = async (req: Request, res: Response, next: NextFunction) =>
 
     // Activate and delete OTPs via model transaction helper
     await OtpModel.verifyAndActivateUser(user.id);
+
+    // Log action to audit logs
+    await logAction(user.id, "USER_VERIFIED", "User verified their account", req.ip);
 
     const token = generateToken({ id: user.id, email: user.email, role: user.role });
 
@@ -229,6 +236,9 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       return sendSuccess(res, { isVerified: false }, "Account is not verified. A verification code has been sent.");
     }
 
+    // Log action to audit logs
+    await logAction(user.id, "USER_LOGIN", "User logged in", req.ip);
+
     const token = generateToken({ id: user.id, email: user.email, role: user.role });
 
     return sendSuccess(res, {
@@ -331,6 +341,9 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
         .where({ userId: user.id, purpose: "PASSWORD_RESET" })
         .del();
     });
+
+    // Log action to audit logs
+    await logAction(user.id, "PASSWORD_RESET", "User reset their password", req.ip);
 
     return sendSuccess(res, null, "Password reset successfully. You can now login with your new password.");
   } catch (error: any) {
