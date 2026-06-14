@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { ConsultationModel } from "../models/consultation.model";
 import { AppointmentModel } from "../models/appointment.model";
 import { VideoSessionModel } from "../models/videoSession.model";
+import { generateAgoraToken } from "../services/agora.service";
 import {
   sendSuccess,
   sendBadRequest,
@@ -85,10 +86,7 @@ export const generateToken = async (req: Request, res: Response, next: NextFunct
     const appCert = process.env.AGORA_APP_CERTIFICATE;
 
     if (appId && appCert) {
-      // In production: generate a real Agora RTC token here
-      // const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
-      // token = RtcTokenBuilder.buildTokenWithUid(appId, appCert, videoSession.channelName, 0, RtcRole.PUBLISHER, ...);
-      token = `agora-token-${crypto.randomUUID().slice(0, 12)}`;
+      token = generateAgoraToken(videoSession.channelName);
       console.log(`[Video] Generated Agora token for channel: ${videoSession.channelName}`);
     } else {
       token = `dev-token-${crypto.randomUUID().slice(0, 12)}`;
