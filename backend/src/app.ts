@@ -18,10 +18,8 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
 
-
-
 // API Base Route
-app.use("/v1", apiRouter);
+app.use("/", apiRouter);
 
 // Global Error Handler Middleware
 app.use(errorHandler);
