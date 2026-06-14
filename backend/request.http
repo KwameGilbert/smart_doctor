@@ -686,3 +686,284 @@ Authorization: Bearer {{authToken}}
 GET {{baseUrl}}/admin/consultations
 Authorization: Bearer {{authToken}}
 
+
+### ============================================================
+### MEDICAL RECORDS ENDPOINTS
+### ============================================================
+
+### 67. Doctor/Patient: Create Medical Record
+POST {{baseUrl}}/medical-records
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "patientId": "replace-with-patient-uuid",
+  "recordType": "LAB_REPORT",
+  "description": "Routine blood lipid panel results.",
+  "attachmentUrl": "http://localhost:5000/uploads/lipid_panel.pdf",
+  "recordDate": "2026-06-13T12:00:00.000Z"
+}
+
+###
+
+### 68. Patient/Doctor/Admin: List Medical Records
+GET {{baseUrl}}/medical-records?patientId=replace-with-patient-uuid
+Authorization: Bearer {{authToken}}
+
+###
+
+### 69. Patient/Doctor/Admin: Get Specific Medical Record
+# @recordId = replace-with-medical-record-uuid
+GET {{baseUrl}}/medical-records/{{recordId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### 70. Doctor/Patient: Update Medical Record
+# @recordId = replace-with-medical-record-uuid
+PUT {{baseUrl}}/medical-records/{{recordId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "recordType": "LAB_REPORT",
+  "description": "Updated description: Lipid panel indicates elevated LDL cholesterol.",
+  "recordDate": "2026-06-13T12:00:00.000Z"
+}
+
+###
+
+### 71. Doctor/Patient: Delete Medical Record
+# @recordId = replace-with-medical-record-uuid
+DELETE {{baseUrl}}/medical-records/{{recordId}}
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+### PRESCRIPTIONS & PRESCRIPTION ITEMS ENDPOINTS
+### ============================================================
+
+### 72. Doctor: Create Prescription (with items)
+POST {{baseUrl}}/prescriptions
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "patientId": "replace-with-patient-uuid",
+  "consultationId": "replace-with-consultation-uuid",
+  "notes": "Take medication with food.",
+  "items": [
+    {
+      "medication": "Amoxicillin",
+      "dosage": "500mg",
+      "frequency": "Three times daily",
+      "duration": "7 days",
+      "instructions": "Finish the entire course."
+    },
+    {
+      "medication": "Paracetamol",
+      "dosage": "500mg",
+      "frequency": "Every 6 hours as needed",
+      "duration": "3 days",
+      "instructions": "Do not exceed 4g per day."
+    }
+  ]
+}
+
+###
+
+### 73. Patient/Doctor/Admin: List Prescriptions
+GET {{baseUrl}}/prescriptions?patientId=replace-with-patient-uuid
+Authorization: Bearer {{authToken}}
+
+###
+
+### 74. Patient/Doctor/Admin: Get Specific Prescription
+# @prescriptionId = replace-with-prescription-uuid
+GET {{baseUrl}}/prescriptions/{{prescriptionId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### 75. Doctor: Update Prescription notes/items
+# @prescriptionId = replace-with-prescription-uuid
+PUT {{baseUrl}}/prescriptions/{{prescriptionId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "notes": "Updated notes: Take amoxicillin strictly after food.",
+  "items": [
+    {
+      "medication": "Amoxicillin",
+      "dosage": "500mg",
+      "frequency": "Three times daily",
+      "duration": "7 days",
+      "instructions": "Take with water right after meals."
+    }
+  ]
+}
+
+###
+
+### 76. Doctor/Admin: Delete Prescription
+# @prescriptionId = replace-with-prescription-uuid
+DELETE {{baseUrl}}/prescriptions/{{prescriptionId}}
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+### PAYMENTS & TRANSACTIONS ENDPOINTS
+### ============================================================
+
+### 77. Patient/Doctor/Admin: Verify Payment
+POST {{baseUrl}}/payments/verify
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "reference": "MOCK-SUCCESS-REFERENCE-123"
+}
+
+###
+
+### 78. Patient/Doctor/Admin: List Payments
+GET {{baseUrl}}/payments?status=SUCCESSFUL
+Authorization: Bearer {{authToken}}
+
+###
+
+### 79. Patient/Doctor/Admin: Get Payment Details by ID
+# @paymentId = replace-with-payment-uuid
+GET {{baseUrl}}/payments/{{paymentId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### 80. Patient/Doctor/Admin: List Transactions
+GET {{baseUrl}}/payments/transactions
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+### DOCTOR VERIFICATION ENDPOINTS
+### ============================================================
+
+### 81. Doctor: Submit Verification Document
+POST {{baseUrl}}/doctor-verifications
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "documentType": "Medical License",
+  "documentUrl": "http://localhost:5000/uploads/medical_license.pdf"
+}
+
+###
+
+### 82. Doctor/Admin: List Verification Submissions
+GET {{baseUrl}}/doctor-verifications?status=PENDING
+Authorization: Bearer {{authToken}}
+
+###
+
+### 83. Doctor/Admin: Get Verification Submission Details
+# @verificationId = replace-with-verification-uuid
+GET {{baseUrl}}/doctor-verifications/{{verificationId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### 84. Admin: Review Doctor Verification Request (Approve/Reject)
+# @verificationId = replace-with-verification-uuid
+PATCH {{baseUrl}}/doctor-verifications/{{verificationId}}/review
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "APPROVED",
+  "comments": "Document verification credentials look correct."
+}
+
+
+### ============================================================
+### REVIEWS ENDPOINTS
+### ============================================================
+
+### 85. Patient: Submit Appointment Review (recalculates doctor rating)
+POST {{baseUrl}}/reviews
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "doctorId": "replace-with-doctor-uuid",
+  "appointmentId": "replace-with-completed-appointment-uuid",
+  "rating": 5,
+  "comment": "Outstanding consultation! The doctor was very patient and professional."
+}
+
+###
+
+### 86. Patient/Doctor/Admin: List Doctor Reviews
+GET {{baseUrl}}/reviews?doctorId=replace-with-doctor-uuid
+Authorization: Bearer {{authToken}}
+
+###
+
+### 87. Patient/Doctor/Admin: Get Specific Review Details
+# @reviewId = replace-with-review-uuid
+GET {{baseUrl}}/reviews/{{reviewId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### 88. Admin: Delete Review (recalculates doctor rating)
+# @reviewId = replace-with-review-uuid
+DELETE {{baseUrl}}/reviews/{{reviewId}}
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+### NOTIFICATIONS & PUSH TOKENS ENDPOINTS
+### ============================================================
+
+### 89. Patient/Doctor: Update Profile to Register Push Tokens (Expo and FCM)
+PUT {{baseUrl}}/users/profile
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "expoPushToken": "ExponentPushToken[mock-token-value-123]",
+  "fcmToken": "fcm-token-mock-value-abc"
+}
+
+###
+
+### 90. Patient/Doctor/Admin: List My Notifications
+GET {{baseUrl}}/notifications
+Authorization: Bearer {{authToken}}
+
+###
+
+### 91. Patient/Doctor/Admin: Mark All Notifications As Read
+PATCH {{baseUrl}}/notifications/read-all
+Authorization: Bearer {{authToken}}
+
+###
+
+### 92. Patient/Doctor/Admin: Mark Single Notification As Read
+# @notificationId = replace-with-notification-uuid
+PATCH {{baseUrl}}/notifications/{{notificationId}}/read
+Authorization: Bearer {{authToken}}
+
+###
+
+### 93. Patient/Doctor/Admin: Delete Notification
+# @notificationId = replace-with-notification-uuid
+DELETE {{baseUrl}}/notifications/{{notificationId}}
+Authorization: Bearer {{authToken}}
+
+
+
+
+

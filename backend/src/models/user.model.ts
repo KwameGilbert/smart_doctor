@@ -12,6 +12,8 @@ export interface User {
   role: "PATIENT" | "DOCTOR" | "ADMIN";
   isVerified: boolean;
   isActive?: boolean;
+  expoPushToken?: string | null;
+  fcmToken?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -93,6 +95,8 @@ export class UserModelClass extends BaseModel<User> {
           "users.role",
           "users.isVerified",
           "users.isActive",
+          "users.expoPushToken",
+          "users.fcmToken",
           "users.createdAt",
           "users.updatedAt",
           "patients.dob",
@@ -115,6 +119,8 @@ export class UserModelClass extends BaseModel<User> {
           "users.role",
           "users.isVerified",
           "users.isActive",
+          "users.expoPushToken",
+          "users.fcmToken",
           "users.createdAt",
           "users.updatedAt",
           "doctors.bio",
@@ -148,6 +154,8 @@ export class UserModelClass extends BaseModel<User> {
           "users.role",
           "users.isVerified",
           "users.isActive",
+          "users.expoPushToken",
+          "users.fcmToken",
           "users.createdAt",
           "users.updatedAt"
         );

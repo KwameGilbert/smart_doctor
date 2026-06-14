@@ -46,12 +46,14 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
     }
 
     // 1. Process Core user fields
-    const { firstName, lastName, phoneNumber, avatarUrl } = req.body;
+    const { firstName, lastName, phoneNumber, avatarUrl, expoPushToken, fcmToken } = req.body;
     const userUpdate: any = {};
     if (firstName !== undefined) userUpdate.firstName = firstName;
     if (lastName !== undefined) userUpdate.lastName = lastName;
     if (phoneNumber !== undefined) userUpdate.phoneNumber = phoneNumber;
     if (avatarUrl !== undefined) userUpdate.avatarUrl = avatarUrl;
+    if (expoPushToken !== undefined) userUpdate.expoPushToken = expoPushToken;
+    if (fcmToken !== undefined) userUpdate.fcmToken = fcmToken;
 
     // 2. Process Role-specific fields
     const patientUpdate: any = {};
@@ -199,13 +201,15 @@ export const updateUserById = async (req: Request, res: Response, next: NextFunc
     const role = user.role;
 
     // 1. Process Core user fields
-    const { firstName, lastName, phoneNumber, avatarUrl, isVerified } = req.body;
+    const { firstName, lastName, phoneNumber, avatarUrl, isVerified, expoPushToken, fcmToken } = req.body;
     const userUpdate: any = {};
     if (firstName !== undefined) userUpdate.firstName = firstName;
     if (lastName !== undefined) userUpdate.lastName = lastName;
     if (phoneNumber !== undefined) userUpdate.phoneNumber = phoneNumber;
     if (avatarUrl !== undefined) userUpdate.avatarUrl = avatarUrl;
     if (isVerified !== undefined) userUpdate.isVerified = isVerified === true || isVerified === "true";
+    if (expoPushToken !== undefined) userUpdate.expoPushToken = expoPushToken;
+    if (fcmToken !== undefined) userUpdate.fcmToken = fcmToken;
 
     // 2. Process Role-specific fields
     const patientUpdate: any = {};

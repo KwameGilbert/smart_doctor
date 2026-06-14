@@ -10,6 +10,14 @@ import appointmentRouter from "./appointment.routes";
 import videoSessionRouter from "./videoSession.routes";
 import messageRouter from "./message.routes";
 import consultationRouter from "./consultation.routes";
+import medicalRecordRouter from "./medicalRecord.routes";
+import prescriptionRouter from "./prescription.routes";
+import paymentRouter from "./payment.routes";
+import doctorVerificationRouter from "./doctorVerification.routes";
+import reviewRouter from "./review.routes";
+import notificationRouter from "./notification.routes";
+import auditLogRouter from "./auditLog.routes";
+import documentRouter from "./document.routes";
 
 const router = Router();
 
@@ -54,5 +62,19 @@ router.use("/appointments", appointmentRouter);
 router.use("/consultations", videoSessionRouter);
 router.use("/consultations", messageRouter);
 router.use("/consultations", consultationRouter);
+
+// Medical Records & Prescriptions Routes
+router.use("/medical-records", medicalRecordRouter);
+router.use("/prescriptions", prescriptionRouter);
+router.use("/payments", paymentRouter);
+router.use("/doctor-verifications", doctorVerificationRouter);
+router.use("/reviews", reviewRouter);
+router.use("/notifications", notificationRouter);
+
+// Audit Logs (Admin-only)
+router.use("/admin/audit-logs", auditLogRouter);
+
+// Document Management
+router.use("/documents", documentRouter);
 
 export default router;

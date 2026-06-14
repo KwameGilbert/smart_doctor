@@ -5,6 +5,8 @@ import { AppointmentModel } from "../models/appointment.model";
 import { DoctorModel } from "../models/doctor.model";
 import { ConsultationModel } from "../models/consultation.model";
 import { AvailabilityModel } from "../models/availability.model";
+import { initializeTransaction } from "../services/paystack.service";
+import { sendNotificationTemplate } from "../services/notification.service";
 import {
   sendSuccess,
   sendCreated,
@@ -124,17 +126,65 @@ export const bookAppointment = async (req: Request, res: Response, next: NextFun
       return sendBadRequest(res, "You already have an appointment at this time.");
     }
 
-    // All checks passed — create the appointment
-    const appointment = await AppointmentModel.create({
-      id: crypto.randomUUID(),
+    // All checks passed — create the appointment & pending payment atomically
+    const appointmentId = crypto.randomUUID();
+    const paymentId = crypto.randomUUID();
+    const reference = `PAY-${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
+    const amount = parseFloat(doctor.consultationFee);
+    const now = new Date().toISOString();
+
+    const appointment = {
+      id: appointmentId,
       patientId,
       doctorId,
       dateTime: apptDate.toISOString(),
-      status: "PENDING",
-      reason: reason || null
+      status: "PENDING" as const,
+      reason: reason || null,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const payment = {
+      id: paymentId,
+      appointmentId,
+      patientId,
+      amount,
+      status: "PENDING" as const,
+      provider: "PAYSTACK",
+      reference,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    // Initialize Paystack Checkout URL
+    const paystackData = await initializeTransaction(req.user!.email, amount, reference);
+
+    await db.transaction(async (trx) => {
+      await trx("appointments").insert(appointment);
+      await trx("payments").insert(payment);
     });
 
-    return sendCreated(res, appointment, "Appointment booked successfully.");
+    // Send notifications via template engine
+    const doctorUser = await db("users").where({ id: doctorId }).first();
+    const patientUser = await db("users").where({ id: patientId }).first();
+    if (doctorUser && patientUser) {
+      const doctorName = `${doctorUser.firstName} ${doctorUser.lastName}`;
+      const patientName = `${patientUser.firstName} ${patientUser.lastName}`;
+      await sendNotificationTemplate(patientId, "APPOINTMENT_PENDING", { doctorName });
+      await sendNotificationTemplate(doctorId, "APPOINTMENT_REQUEST", { patientName });
+    }
+
+    return sendCreated(
+      res,
+      {
+        appointment,
+        payment: {
+          ...payment,
+          authorizationUrl: paystackData.authorization_url
+        }
+      },
+      "Appointment booked successfully. Payment initialized."
+    );
   } catch (err) {
     next(err);
   }
@@ -261,6 +311,13 @@ export const confirmAppointment = async (req: Request, res: Response, next: Next
     const updated = await AppointmentModel.findById(id);
     const consultation = await ConsultationModel.findOne({ appointmentId: id });
 
+    // Notify Patient via template engine
+    const doctorUser = await db("users").where({ id: doctorId }).first();
+    if (doctorUser) {
+      const doctorName = `${doctorUser.firstName} ${doctorUser.lastName}`;
+      await sendNotificationTemplate(appointment.patientId, "APPOINTMENT_CONFIRMED", { doctorName });
+    }
+
     return sendSuccess(res, { ...updated, consultation }, "Appointment confirmed. Consultation created.");
   } catch (err) {
     next(err);
@@ -285,6 +342,14 @@ export const rejectAppointment = async (req: Request, res: Response, next: NextF
 
     await AppointmentModel.update(id, { status: "REJECTED", updatedAt: new Date().toISOString() } as any);
     const updated = await AppointmentModel.findById(id);
+
+    // Notify Patient via template engine
+    const doctorUser = await db("users").where({ id: doctorId }).first();
+    if (doctorUser) {
+      const doctorName = `${doctorUser.firstName} ${doctorUser.lastName}`;
+      await sendNotificationTemplate(appointment.patientId, "APPOINTMENT_REJECTED", { doctorName });
+    }
+
     return sendSuccess(res, updated, "Appointment rejected.");
   } catch (err) {
     next(err);
@@ -319,6 +384,22 @@ export const cancelAppointment = async (req: Request, res: Response, next: NextF
 
     await AppointmentModel.update(id, { status: "CANCELLED", updatedAt: new Date().toISOString() } as any);
     const updated = await AppointmentModel.findById(id);
+
+    // Notify participants via template engine
+    const formattedDate = new Date(appointment.dateTime).toLocaleDateString();
+    if (role === "ADMIN") {
+      await sendNotificationTemplate(appointment.patientId, "APPOINTMENT_CANCELLED", { date: formattedDate, cancelledBy: "Admin" });
+      await sendNotificationTemplate(appointment.doctorId, "APPOINTMENT_CANCELLED", { date: formattedDate, cancelledBy: "Admin" });
+    } else {
+      const cancellingUser = await db("users").where({ id: userId }).first();
+      const isPatient = appointment.patientId === userId;
+      const recipientId = isPatient ? appointment.doctorId : appointment.patientId;
+      if (cancellingUser) {
+        const cancelledBy = `${cancellingUser.firstName} ${cancellingUser.lastName}`;
+        await sendNotificationTemplate(recipientId, "APPOINTMENT_CANCELLED", { date: formattedDate, cancelledBy });
+      }
+    }
+
     return sendSuccess(res, updated, "Appointment cancelled.");
   } catch (err) {
     next(err);
