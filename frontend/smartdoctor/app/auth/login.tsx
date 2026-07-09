@@ -15,6 +15,7 @@ export default function LoginScreen() {
   );
 
   const handleLogin = () => {
+    router.replace("/home"); return; // Dev bypass: directly navigate to home pages
     // Basic validation
     let validationErrors: { email?: string; password?: string } = {};
     if (!email) {
