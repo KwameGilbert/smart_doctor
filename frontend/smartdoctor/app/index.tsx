@@ -54,12 +54,12 @@ export default function OnboardingScreen() {
     if (currentIndex < SLIDES.length - 1) {
       slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
-      router.replace("/auth/index");
+      router.replace("/auth");
     }
   };
 
   const skipOnboarding = () => {
-    router.replace("/auth/index");
+    router.replace("/auth");
   };
 
   return (

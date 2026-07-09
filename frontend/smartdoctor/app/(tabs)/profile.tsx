@@ -23,7 +23,7 @@ export default function ProfileScreen() {
 
       {/* Log out section */}
       <TouchableOpacity
-        onPress={() => router.replace("/auth/index")}
+        onPress={() => router.replace("/auth")}
         className="border border-red-100 bg-red-50/20 py-4 rounded-2xl items-center justify-center w-full mb-4"
       >
         <Text className="text-red-500 font-bold text-sm">Log Out</Text>
