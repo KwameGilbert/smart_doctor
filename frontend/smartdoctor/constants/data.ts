@@ -29,7 +29,7 @@ export interface Doctor {
 export const DUMMY_REVIEWS_1: Review[] = [
   {
     id: "1",
-    name: "Anton Wilson",
+    name: "Rita Yeboah",
     date: "Jan 22, 2025",
     rating: 4,
     text: "It has been a pleasure working with his consistently excellent doctor who is beloved and trusted and by patients, trainees and peers alike.",
@@ -59,7 +59,7 @@ export const DUMMY_REVIEWS_2: Review[] = [
 export const TOP_DOCTORS: Doctor[] = [
   {
     id: "1",
-    name: "Dr. Sarah Jenkins",
+    name: "Dr. Rita Yeboah",
     specialty: "Cardiologist",
     rating: 4.9,
     reviews: 124,

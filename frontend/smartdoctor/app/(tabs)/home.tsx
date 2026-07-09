@@ -105,7 +105,7 @@ export default function HomeScreen() {
                 />
                 <View>
                   <Text className="text-xl font-bold text-slate-900">
-                    Hello John
+                    Hello Elton,
                   </Text>
                   <Text className="text-slate-500 text-xs font-medium mt-0.5">
                     {phrase || "How are you feeling today?"}
