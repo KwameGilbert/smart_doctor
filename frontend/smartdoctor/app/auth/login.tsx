@@ -8,21 +8,25 @@ import Button from "../../components/ui/Button";
 import AuthPattern from "../../components/AuthPattern";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("");
+  const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+  const [errors, setErrors] = useState<{ emailOrPhone?: string; password?: string }>(
     {},
   );
 
   const handleLogin = () => {
     router.replace("/home"); return; // Dev bypass: directly navigate to home pages
     // Basic validation
-    let validationErrors: { email?: string; password?: string } = {};
-    if (!email) {
-      validationErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      validationErrors.email = "Please enter a valid email";
+    let validationErrors: { emailOrPhone?: string; password?: string } = {};
+    if (!emailOrPhone) {
+      validationErrors.emailOrPhone = "Email or Phone number is required";
+    } else {
+      const isEmail = /\S+@\S+\.\S+/.test(emailOrPhone);
+      const isPhone = /^\+?[0-9]{8,15}$/.test(emailOrPhone.replace(/[\s-]/g, ""));
+      if (!isEmail && !isPhone) {
+        validationErrors.emailOrPhone = "Please enter a valid email or phone number";
+      }
     }
 
     if (!password) {
@@ -72,14 +76,14 @@ export default function LoginScreen() {
 
             {/* Form */}
             <Input
-              label="Email Address"
-              placeholder="name@example.com"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
+              label="Email or Phone Number"
+              placeholder="name@example.com or +123456789"
+              value={emailOrPhone}
+              onChangeText={setEmailOrPhone}
+              keyboardType="default"
               autoCapitalize="none"
-              leftIconName="mail-outline"
-              error={errors.email}
+              leftIconName="person-outline"
+              error={errors.emailOrPhone}
             />
 
             <Input

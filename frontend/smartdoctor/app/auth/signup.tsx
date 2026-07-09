@@ -10,12 +10,14 @@ import AuthPattern from "../../components/AuthPattern";
 export default function SignupScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
+    phone?: string;
     password?: string;
     confirmPassword?: string;
   }>({});
@@ -37,6 +39,12 @@ export default function SignupScreen() {
       validationErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       validationErrors.email = "Please enter a valid email";
+    }
+
+    if (!phone) {
+      validationErrors.phone = "Phone number is required";
+    } else if (!/^\+?[0-9]{8,15}$/.test(phone.replace(/[\s-]/g, ""))) {
+      validationErrors.phone = "Please enter a valid phone number";
     }
 
     if (!password) {
@@ -107,6 +115,17 @@ export default function SignupScreen() {
               autoCapitalize="none"
               leftIconName="mail-outline"
               error={errors.email}
+            />
+
+            <Input
+              label="Phone Number"
+              placeholder="e.g. +123456789"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              autoCapitalize="none"
+              leftIconName="call-outline"
+              error={errors.phone}
             />
 
             <Input
