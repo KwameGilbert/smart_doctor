@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
+import AuthPattern from "../../components/AuthPattern";
 
 export default function SignupScreen() {
   const [name, setName] = useState("");
@@ -64,7 +65,8 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-white relative" edges={["top", "bottom"]}>
+      <AuthPattern />
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
@@ -138,6 +140,21 @@ export default function SignupScreen() {
               onPress={handleSignup}
               className="mb-6"
             />
+
+            {/* Terms of Use & Privacy Policy */}
+            <View className="items-center px-4 mb-6">
+              <Text className="text-center text-xs leading-relaxed text-slate-400">
+                {"By continuing, you agree to our "}
+                <Text className="font-semibold text-[#1565C0] underline">
+                  Terms of Use
+                </Text>
+                {" and "}
+                <Text className="font-semibold text-[#1565C0] underline">
+                  Privacy Policy
+                </Text>
+                .
+              </Text>
+            </View>
 
             {/* Footer */}
             <View className="flex-row justify-center items-center">

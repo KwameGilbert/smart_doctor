@@ -14,9 +14,12 @@ export default function HomeScreen() {
             <Text className="text-slate-500 text-sm font-medium">
               Welcome back
             </Text>
-            <Text className="text-2xl font-bold text-slate-900">Dr. John Doe</Text>
+            <Text className="text-2xl font-bold text-slate-900">John Doe</Text>
           </View>
-          <TouchableOpacity className="w-12 h-12 bg-white rounded-full items-center justify-center border border-slate-100 shadow-sm">
+          <TouchableOpacity
+            onPress={() => router.push("/notifications")}
+            className="w-12 h-12 bg-white rounded-full items-center justify-center border border-slate-100 shadow-sm"
+          >
             <Ionicons name="notifications-outline" size={24} color="#1E293B" />
           </TouchableOpacity>
         </View>

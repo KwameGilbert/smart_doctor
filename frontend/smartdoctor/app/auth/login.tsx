@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
+import AuthPattern from "../../components/AuthPattern";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -46,7 +47,8 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-white relative" edges={["top", "bottom"]}>
+      <AuthPattern />
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
@@ -92,7 +94,10 @@ export default function LoginScreen() {
             />
 
             {/* Forgot Password */}
-            <TouchableOpacity className="items-end mb-8">
+            <TouchableOpacity
+              onPress={() => router.push("/auth/forgot-password")}
+              className="items-end mb-8"
+            >
               <Text className="text-[#1565C0] font-semibold text-sm">
                 Forgot Password?
               </Text>
@@ -111,7 +116,7 @@ export default function LoginScreen() {
             {/* Footer */}
             <View className="flex-row justify-center items-center">
               <Text className="text-slate-500 text-sm">
-                Don't have an account?{" "}
+                {"Don't have an account? "}
               </Text>
               <TouchableOpacity onPress={() => router.push("/auth/signup")}>
                 <Text className="text-[#1565C0] font-bold text-sm">

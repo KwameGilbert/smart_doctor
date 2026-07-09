@@ -5,9 +5,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Button from "../components/ui/Button";
 
+import AuthPattern from "../components/AuthPattern";
+
 export default function AuthWelcomeScreen() {
   return (
-    <SafeAreaView className="flex-1 bg-white items-center justify-between p-8">
+    <SafeAreaView className="flex-1 bg-white items-center justify-between p-8 relative">
+      <AuthPattern />
       {/* Top spacer */}
       <View />
 
