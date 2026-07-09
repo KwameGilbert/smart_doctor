@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { View, Animated, StyleSheet, Dimensions } from "react-native";
+import { View, Animated, StyleSheet, Dimensions, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 
@@ -20,10 +20,18 @@ const SQUARE_ITEMS: GridSquare[] = [
   { icon: "pulse", bg: "#F9F5FF", iconColor: "#9333EA" },
 ];
 
-// Replicated arrays to 24 items (3 x 8 unique items) to guarantee full-screen vertical coverage
-const COL_0_ITEMS = [...SQUARE_ITEMS, ...SQUARE_ITEMS, ...SQUARE_ITEMS];
-const COL_1_ITEMS = [[...SQUARE_ITEMS].reverse(), [...SQUARE_ITEMS].reverse(), [...SQUARE_ITEMS].reverse()].flat();
+const { width } = Dimensions.get("window");
+const gap = 12;
+const colWidth = (width - gap * 5) / 4;
+const itemHeight = colWidth + gap;
+const uniqueHeight = itemHeight * 8; // 8 unique items in the cycle
+
+// Duplicate 4 times to render 32 items. This provides ~2500px height.
+// This is way longer than any screen height + translation distance, ensuring infinite cover.
+const COL_0_ITEMS = [...SQUARE_ITEMS, ...SQUARE_ITEMS, ...SQUARE_ITEMS, ...SQUARE_ITEMS];
+const COL_1_ITEMS = [[...SQUARE_ITEMS].reverse(), [...SQUARE_ITEMS].reverse(), [...SQUARE_ITEMS].reverse(), [...SQUARE_ITEMS].reverse()].flat();
 const COL_2_ITEMS = [
+  [...SQUARE_ITEMS].slice(3).concat([...SQUARE_ITEMS].slice(0, 3)),
   [...SQUARE_ITEMS].slice(3).concat([...SQUARE_ITEMS].slice(0, 3)),
   [...SQUARE_ITEMS].slice(3).concat([...SQUARE_ITEMS].slice(0, 3)),
   [...SQUARE_ITEMS].slice(3).concat([...SQUARE_ITEMS].slice(0, 3)),
@@ -32,13 +40,14 @@ const COL_3_ITEMS = [
   [...SQUARE_ITEMS].slice(5).concat([...SQUARE_ITEMS].slice(0, 5)),
   [...SQUARE_ITEMS].slice(5).concat([...SQUARE_ITEMS].slice(0, 5)),
   [...SQUARE_ITEMS].slice(5).concat([...SQUARE_ITEMS].slice(0, 5)),
+  [...SQUARE_ITEMS].slice(5).concat([...SQUARE_ITEMS].slice(0, 5)),
 ].flat();
 
 export default function AuthGridBackground() {
   const scrollAnim0 = useRef(new Animated.Value(0)).current;
-  const scrollAnim1 = useRef(new Animated.Value(-640)).current;
+  const scrollAnim1 = useRef(new Animated.Value(-uniqueHeight)).current;
   const scrollAnim2 = useRef(new Animated.Value(0)).current;
-  const scrollAnim3 = useRef(new Animated.Value(-640)).current;
+  const scrollAnim3 = useRef(new Animated.Value(-uniqueHeight)).current;
 
   useEffect(() => {
     const createScrollAnimation = (
@@ -53,15 +62,15 @@ export default function AuthGridBackground() {
           toValue: toVal,
           duration: duration,
           useNativeDriver: true,
-          easing: (t) => t,
+          easing: Easing.linear,
         })
       );
     };
 
-    const anim0 = createScrollAnimation(scrollAnim0, 0, -640, 20000);
-    const anim1 = createScrollAnimation(scrollAnim1, -640, 0, 22000);
-    const anim2 = createScrollAnimation(scrollAnim2, 0, -640, 24000);
-    const anim3 = createScrollAnimation(scrollAnim3, -640, 0, 21000);
+    const anim0 = createScrollAnimation(scrollAnim0, 0, -uniqueHeight, 24000);
+    const anim1 = createScrollAnimation(scrollAnim1, -uniqueHeight, 0, 26000);
+    const anim2 = createScrollAnimation(scrollAnim2, 0, -uniqueHeight, 28000);
+    const anim3 = createScrollAnimation(scrollAnim3, -uniqueHeight, 0, 25000);
 
     anim0.start();
     anim1.start();
@@ -80,7 +89,7 @@ export default function AuthGridBackground() {
     <View style={StyleSheet.absoluteFillObject}>
       {/* Background Scrolling Grid */}
       <View style={styles.gridContainer} pointerEvents="none">
-        {/* Column 0 (UP) */}
+        {/* Column 0 */}
         <Animated.View
           style={[styles.column, { transform: [{ translateY: scrollAnim0 }] }]}
         >
@@ -94,7 +103,7 @@ export default function AuthGridBackground() {
           ))}
         </Animated.View>
 
-        {/* Column 1 (DOWN) */}
+        {/* Column 1 */}
         <Animated.View
           style={[styles.column, { transform: [{ translateY: scrollAnim1 }] }]}
         >
@@ -108,7 +117,7 @@ export default function AuthGridBackground() {
           ))}
         </Animated.View>
 
-        {/* Column 2 (UP) */}
+        {/* Column 2 */}
         <Animated.View
           style={[styles.column, { transform: [{ translateY: scrollAnim2 }] }]}
         >
@@ -122,7 +131,7 @@ export default function AuthGridBackground() {
           ))}
         </Animated.View>
 
-        {/* Column 3 (DOWN) */}
+        {/* Column 3 */}
         <Animated.View
           style={[styles.column, { transform: [{ translateY: scrollAnim3 }] }]}
         >
@@ -137,14 +146,20 @@ export default function AuthGridBackground() {
         </Animated.View>
       </View>
 
-      {/* Svg Gradient Overlay for accessibility/contrast */}
+      {/* Svg Gradient Overlay for cylindrical rolling loop effect */}
       <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
         <Svg height="100%" width="100%">
           <Defs>
             <LinearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.45" />
-              <Stop offset="45%" stopColor="#ffffff" stopOpacity="0.8" />
-              <Stop offset="70%" stopColor="#ffffff" stopOpacity="0.95" />
+              {/* Fade out/hide completely at the top */}
+              <Stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+              <Stop offset="12%" stopColor="#ffffff" stopOpacity="0.45" />
+              
+              {/* Visible in the middle */}
+              <Stop offset="50%" stopColor="#ffffff" stopOpacity="0.2" />
+              
+              {/* Fade out/hide completely at the bottom */}
+              <Stop offset="82%" stopColor="#ffffff" stopOpacity="0.8" />
               <Stop offset="100%" stopColor="#ffffff" stopOpacity="1" />
             </LinearGradient>
           </Defs>
@@ -154,10 +169,6 @@ export default function AuthGridBackground() {
     </View>
   );
 }
-
-const { width } = Dimensions.get("window");
-const gap = 12;
-const colWidth = (width - gap * 5) / 4;
 
 const styles = StyleSheet.create({
   gridContainer: {
