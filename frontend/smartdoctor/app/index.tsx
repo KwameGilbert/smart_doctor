@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { HoneycombSvg, DoctorsSvg, SecureRecordsSvg } from "../components/OnboardingSvgs";
 
 const { width } = Dimensions.get("window");
 
@@ -75,19 +76,34 @@ export default function OnboardingScreen() {
       <View className="flex-[3]">
         <Animated.FlatList
           data={SLIDES}
-          renderItem={({ item }) => (
-            <View className="items-center justify-center px-8" style={{ width }}>
-              <View className="w-48 h-48 bg-[#E6F4FE] rounded-full items-center justify-center mb-10">
-                <Ionicons name={item.icon} size={100} color="#1565C0" />
+          renderItem={({ item }) => {
+            const renderSvg = (id: string) => {
+              switch (id) {
+                case "1":
+                  return <HoneycombSvg width={280} height={280} />;
+                case "2":
+                  return <DoctorsSvg width={280} height={280} />;
+                case "3":
+                  return <SecureRecordsSvg width={280} height={280} />;
+                default:
+                  return null;
+              }
+            };
+
+            return (
+              <View className="items-center justify-center px-8" style={{ width }}>
+                <View className="h-72 items-center justify-center mb-10 w-full">
+                  {renderSvg(item.id)}
+                </View>
+                <Text className="text-3xl font-bold text-slate-900 text-center mb-4">
+                  {item.title}
+                </Text>
+                <Text className="text-base text-slate-500 text-center leading-relaxed px-4">
+                  {item.description}
+                </Text>
               </View>
-              <Text className="text-3xl font-bold text-slate-900 text-center mb-4">
-                {item.title}
-              </Text>
-              <Text className="text-base text-slate-500 text-center leading-relaxed px-4">
-                {item.description}
-              </Text>
-            </View>
-          )}
+            );
+          }}
           horizontal
           showsHorizontalScrollIndicator={false}
           pagingEnabled
