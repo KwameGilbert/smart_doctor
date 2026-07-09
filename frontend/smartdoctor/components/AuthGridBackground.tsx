@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import { View, Animated, StyleSheet, Dimensions, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
@@ -18,36 +18,53 @@ const SQUARE_ITEMS: GridSquare[] = [
   { icon: "document-text", bg: "#F0F9FF", iconColor: "#0284C7" },
   { icon: "fitness", bg: "#F5F3FF", iconColor: "#7C3AED" },
   { icon: "pulse", bg: "#F9F5FF", iconColor: "#9333EA" },
+  { icon: "medkit", bg: "#ECFDF5", iconColor: "#059669" },
+  { icon: "thermometer", bg: "#FFF7ED", iconColor: "#EA580C" },
+  { icon: "bandage", bg: "#FFF1F2", iconColor: "#E11D48" },
+  { icon: "receipt", bg: "#FEF3C7", iconColor: "#D97706" },
 ];
+
+const shuffleArray = (array: GridSquare[]): GridSquare[] => {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
 
 const { width } = Dimensions.get("window");
 const gap = 12;
 const colWidth = (width - gap * 5) / 4;
 const itemHeight = colWidth + gap;
-const uniqueHeight = itemHeight * 8; // 8 unique items in the cycle
-
-// Duplicate 4 times to render 32 items. This provides ~2500px height.
-// This is way longer than any screen height + translation distance, ensuring infinite cover.
-const COL_0_ITEMS = [...SQUARE_ITEMS, ...SQUARE_ITEMS, ...SQUARE_ITEMS, ...SQUARE_ITEMS];
-const COL_1_ITEMS = [[...SQUARE_ITEMS].reverse(), [...SQUARE_ITEMS].reverse(), [...SQUARE_ITEMS].reverse(), [...SQUARE_ITEMS].reverse()].flat();
-const COL_2_ITEMS = [
-  [...SQUARE_ITEMS].slice(3).concat([...SQUARE_ITEMS].slice(0, 3)),
-  [...SQUARE_ITEMS].slice(3).concat([...SQUARE_ITEMS].slice(0, 3)),
-  [...SQUARE_ITEMS].slice(3).concat([...SQUARE_ITEMS].slice(0, 3)),
-  [...SQUARE_ITEMS].slice(3).concat([...SQUARE_ITEMS].slice(0, 3)),
-].flat();
-const COL_3_ITEMS = [
-  [...SQUARE_ITEMS].slice(5).concat([...SQUARE_ITEMS].slice(0, 5)),
-  [...SQUARE_ITEMS].slice(5).concat([...SQUARE_ITEMS].slice(0, 5)),
-  [...SQUARE_ITEMS].slice(5).concat([...SQUARE_ITEMS].slice(0, 5)),
-  [...SQUARE_ITEMS].slice(5).concat([...SQUARE_ITEMS].slice(0, 5)),
-].flat();
+const uniqueHeight = itemHeight * 12; // 12 unique items in the cycle
 
 export default function AuthGridBackground() {
   const scrollAnim0 = useRef(new Animated.Value(0)).current;
   const scrollAnim1 = useRef(new Animated.Value(-uniqueHeight)).current;
   const scrollAnim2 = useRef(new Animated.Value(0)).current;
   const scrollAnim3 = useRef(new Animated.Value(-uniqueHeight)).current;
+
+  // Uniquely shuffle the square items for each column on component initialization
+  const col0Items = useMemo(() => {
+    const shuffled = shuffleArray(SQUARE_ITEMS);
+    return [...shuffled, ...shuffled, ...shuffled];
+  }, []);
+
+  const col1Items = useMemo(() => {
+    const shuffled = shuffleArray(SQUARE_ITEMS);
+    return [...shuffled, ...shuffled, ...shuffled];
+  }, []);
+
+  const col2Items = useMemo(() => {
+    const shuffled = shuffleArray(SQUARE_ITEMS);
+    return [...shuffled, ...shuffled, ...shuffled];
+  }, []);
+
+  const col3Items = useMemo(() => {
+    const shuffled = shuffleArray(SQUARE_ITEMS);
+    return [...shuffled, ...shuffled, ...shuffled];
+  }, []);
 
   useEffect(() => {
     const createScrollAnimation = (
@@ -67,10 +84,10 @@ export default function AuthGridBackground() {
       );
     };
 
-    const anim0 = createScrollAnimation(scrollAnim0, 0, -uniqueHeight, 24000);
-    const anim1 = createScrollAnimation(scrollAnim1, -uniqueHeight, 0, 26000);
-    const anim2 = createScrollAnimation(scrollAnim2, 0, -uniqueHeight, 28000);
-    const anim3 = createScrollAnimation(scrollAnim3, -uniqueHeight, 0, 25000);
+    const anim0 = createScrollAnimation(scrollAnim0, 0, -uniqueHeight, 36000);
+    const anim1 = createScrollAnimation(scrollAnim1, -uniqueHeight, 0, 39000);
+    const anim2 = createScrollAnimation(scrollAnim2, 0, -uniqueHeight, 42000);
+    const anim3 = createScrollAnimation(scrollAnim3, -uniqueHeight, 0, 37000);
 
     anim0.start();
     anim1.start();
@@ -93,7 +110,7 @@ export default function AuthGridBackground() {
         <Animated.View
           style={[styles.column, { transform: [{ translateY: scrollAnim0 }] }]}
         >
-          {COL_0_ITEMS.map((item, idx) => (
+          {col0Items.map((item, idx) => (
             <View
               key={`col0-${idx}`}
               style={[styles.square, { backgroundColor: item.bg }]}
@@ -107,7 +124,7 @@ export default function AuthGridBackground() {
         <Animated.View
           style={[styles.column, { transform: [{ translateY: scrollAnim1 }] }]}
         >
-          {COL_1_ITEMS.map((item, idx) => (
+          {col1Items.map((item, idx) => (
             <View
               key={`col1-${idx}`}
               style={[styles.square, { backgroundColor: item.bg }]}
@@ -121,7 +138,7 @@ export default function AuthGridBackground() {
         <Animated.View
           style={[styles.column, { transform: [{ translateY: scrollAnim2 }] }]}
         >
-          {COL_2_ITEMS.map((item, idx) => (
+          {col2Items.map((item, idx) => (
             <View
               key={`col2-${idx}`}
               style={[styles.square, { backgroundColor: item.bg }]}
@@ -135,7 +152,7 @@ export default function AuthGridBackground() {
         <Animated.View
           style={[styles.column, { transform: [{ translateY: scrollAnim3 }] }]}
         >
-          {COL_3_ITEMS.map((item, idx) => (
+          {col3Items.map((item, idx) => (
             <View
               key={`col3-${idx}`}
               style={[styles.square, { backgroundColor: item.bg }]}
@@ -176,7 +193,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: gap,
-    opacity: 0.35,
+    opacity: 0.5,
     overflow: "hidden",
   },
   column: {
