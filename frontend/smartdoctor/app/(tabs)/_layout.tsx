@@ -47,6 +47,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="appointments"
+        options={{
+          title: "Book",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "calendar" : "calendar-outline"}
+              size={22}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="chat"
         options={{
           title: "AI Chat",
@@ -57,19 +70,6 @@ export default function TabLayout() {
                   ? "chatbubble-ellipses"
                   : "chatbubble-ellipses-outline"
               }
-              size={22}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="appointments"
-        options={{
-          title: "Book",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "calendar" : "calendar-outline"}
               size={22}
               color={color}
             />

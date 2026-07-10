@@ -9,6 +9,19 @@ export interface Review {
   image: string;
 }
 
+export interface ExperienceItem {
+  role: string;
+  hospital: string;
+  period: string;
+  description: string;
+}
+
+export interface EducationItem {
+  degree: string;
+  institution: string;
+  year: string;
+}
+
 export interface Doctor {
   id: string;
   name: string;
@@ -24,6 +37,8 @@ export interface Doctor {
   prescriptionType: string;
   contracts: string;
   reviewsList: Review[];
+  experienceList: ExperienceItem[];
+  educationList: EducationItem[];
 }
 
 export const DUMMY_REVIEWS_1: Review[] = [
@@ -32,7 +47,7 @@ export const DUMMY_REVIEWS_1: Review[] = [
     name: "Rita Yeboah",
     date: "Jan 22, 2025",
     rating: 4,
-    text: "It has been a pleasure working with his consistently excellent doctor who is beloved and trusted and by patients, trainees and peers alike.",
+    text: "It has been a pleasure working with this consistently excellent doctor who is beloved and trusted by patients, trainees and peers alike.",
     image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150",
   },
   {
@@ -40,7 +55,7 @@ export const DUMMY_REVIEWS_1: Review[] = [
     name: "Maya Thompson",
     date: "March 15, 2025",
     rating: 5,
-    text: "Working with Dr. Smith has been amazing. His commitment to patient care earns him the trust and respect of patients, students, and colleagues alike.",
+    text: "Working with Dr. Rita has been amazing. Her commitment to patient care earns her the trust and respect of patients, students, and colleagues alike.",
     image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150",
   },
 ];
@@ -72,22 +87,91 @@ export const TOP_DOCTORS: Doctor[] = [
     prescriptionType: "Online & Offline",
     contracts: "All Insurance",
     reviewsList: DUMMY_REVIEWS_1,
+    experienceList: [
+      {
+        role: "Senior Cardiologist",
+        hospital: "Korle Bu Teaching Hospital",
+        period: "2020 - Present",
+        description: "Led the cardiovascular care unit, performed diagnostic procedures, managed complex inpatient and outpatient cardiology care.",
+      },
+      {
+        role: "Cardiologist",
+        hospital: "Greater Accra Regional Hospital",
+        period: "2016 - 2020",
+        description: "Diagnosed and treated patients with cardiovascular diseases, specialized in echocardiography and stress tests.",
+      },
+      {
+        role: "Resident in Internal Medicine",
+        hospital: "Komfo Anokye Teaching Hospital",
+        period: "2013 - 2016",
+        description: "Completed comprehensive residency training in general internal medicine and clinical cardiology rotations.",
+      },
+    ],
+    educationList: [
+      {
+        degree: "Fellowship in Cardiology",
+        institution: "West African College of Physicians",
+        year: "2016",
+      },
+      {
+        degree: "Doctor of Medicine (M.D.)",
+        institution: "University of Ghana Medical School",
+        year: "2012",
+      },
+      {
+        degree: "B.Sc. in Human Biology",
+        institution: "Kwame Nkrumah University of Science and Technology",
+        year: "2009",
+      },
+    ],
   },
   {
     id: "2",
-    name: "Dr. Robert Chen",
+    name: "Dr. Samuel Mensah",
     specialty: "Pediatrician",
     rating: 4.8,
     reviews: 96,
     image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200",
     experience: "12 Years",
     patients: "+500",
-    about: "Dr. Robert Chen is a board-certified Pediatrician who specializes in the care of infants, children, and adolescents. He believes in a preventive approach to healthcare and works closely with parents.",
-    doctorIdCode: "RC2041",
+    about: "Dr. Samuel Mensah is a board-certified Pediatrician who specializes in the care of infants, children, and adolescents. He believes in a preventive approach to healthcare and works closely with parents.",
+    doctorIdCode: "SM2041",
     avgSessionTime: "25 min",
     prescriptionType: "Offline",
     contracts: "BlueCross, Aetna",
     reviewsList: DUMMY_REVIEWS_2,
+    experienceList: [
+      {
+        role: "Head of Pediatrics",
+        hospital: "37 Military Hospital",
+        period: "2019 - Present",
+        description: "Overseeing pediatric services, managing the ward staff, and providing specialist pediatric consultations.",
+      },
+      {
+        role: "Consultant Pediatrician",
+        hospital: "Greater Accra Regional Hospital (Ridge)",
+        period: "2014 - 2019",
+        description: "Provided child health clinical services, managed routine immunizations and developmental screenings.",
+      },
+      {
+        role: "Pediatric Resident",
+        hospital: "Korle Bu Teaching Hospital",
+        period: "2011 - 2014",
+        description: "Completed training in general pediatrics, neonatal intensive care, and pediatric emergency medicine.",
+      },
+    ],
+    educationList: [
+      {
+        degree: "Fellowship in Pediatrics",
+        institution: "Ghana College of Physicians and Surgeons",
+        year: "2014",
+      },
+      {
+        degree: "Doctor of Medicine (M.D.)",
+        institution: "University of Ghana Medical School",
+        year: "2010",
+      },
+    ],
   },
   {
     id: "3",
@@ -104,6 +188,38 @@ export const TOP_DOCTORS: Doctor[] = [
     prescriptionType: "Online",
     contracts: "All Insurance",
     reviewsList: DUMMY_REVIEWS_1,
+    experienceList: [
+      {
+        role: "Consultant Dermatologist",
+        hospital: "Skin & Beauty Clinic",
+        period: "2021 - Present",
+        description: "Providing specialised services in acne treatment, anti-aging therapies, skin cancer screenings, and cosmetic procedures.",
+      },
+      {
+        role: "Dermatologist",
+        hospital: "The Trust Hospital",
+        period: "2018 - 2021",
+        description: "Treated common and rare skin diseases, performed biopsies, cryotherapy, and minor skin surgeries.",
+      },
+      {
+        role: "Dermatology Resident",
+        hospital: "Korle Bu Teaching Hospital",
+        period: "2015 - 2018",
+        description: "Completed clinical training in outpatient skin clinics, phototherapy sessions, and inpatient consults.",
+      },
+    ],
+    educationList: [
+      {
+        degree: "Master of Medicine in Dermatology",
+        institution: "University of Ghana",
+        year: "2018",
+      },
+      {
+        degree: "Bachelor of Medicine and Surgery (MBChB)",
+        institution: "Kwame Nkrumah University of Science and Technology",
+        year: "2014",
+      },
+    ],
   },
 ];
 
@@ -123,6 +239,38 @@ export const OTHER_DOCTORS: Doctor[] = [
     prescriptionType: "Offline",
     contracts: "Medicare, Medicaid",
     reviewsList: DUMMY_REVIEWS_2,
+    experienceList: [
+      {
+        role: "Chief of Neurology",
+        hospital: "Korle Bu Teaching Hospital",
+        period: "2016 - Present",
+        description: "Head of neurology services, coordinating research programs, and managing specialized stroke and epilepsy clinics.",
+      },
+      {
+        role: "Senior Consultant Neurologist",
+        hospital: "Mayo Clinic",
+        period: "2011 - 2016",
+        description: "Diagnosed and treated neurological disorders, collaborated on clinical trials and advanced neuroimaging research.",
+      },
+      {
+        role: "Consultant Neurologist",
+        hospital: "University College Hospital",
+        period: "2007 - 2011",
+        description: "Provided inpatient consults, ran general neurology outpatient clinics, and taught clinical students.",
+      },
+    ],
+    educationList: [
+      {
+        degree: "Fellowship in Neurology",
+        institution: "West African College of Physicians",
+        year: "2010",
+      },
+      {
+        degree: "Doctor of Medicine (M.D.)",
+        institution: "University of Ibadan",
+        year: "2005",
+      },
+    ],
   },
   {
     id: "5",
@@ -139,6 +287,38 @@ export const OTHER_DOCTORS: Doctor[] = [
     prescriptionType: "Online & Offline",
     contracts: "All Insurance",
     reviewsList: DUMMY_REVIEWS_1,
+    experienceList: [
+      {
+        role: "Senior Gynecologist",
+        hospital: "Nyaho Medical Centre",
+        period: "2020 - Present",
+        description: "Specializing in minimal access surgery, high-risk pregnancy care, and general gynecological health assessments.",
+      },
+      {
+        role: "Consultant OB/GYN",
+        hospital: "Greater Accra Regional Hospital (Ridge)",
+        period: "2017 - 2020",
+        description: "Provided comprehensive maternal care, managed labor and delivery wards, and ran antenatal clinics.",
+      },
+      {
+        role: "Resident OB/GYN",
+        hospital: "Korle Bu Teaching Hospital",
+        period: "2014 - 2017",
+        description: "Completed residency rotation in obstetrics, gynecology, and reproductive endocrinology.",
+      },
+    ],
+    educationList: [
+      {
+        degree: "Fellowship in OB/GYN",
+        institution: "West African College of Surgeons",
+        year: "2017",
+      },
+      {
+        degree: "Doctor of Medicine (M.D.)",
+        institution: "University of Ghana Medical School",
+        year: "2013",
+      },
+    ],
   },
   {
     id: "6",
@@ -155,6 +335,38 @@ export const OTHER_DOCTORS: Doctor[] = [
     prescriptionType: "Offline",
     contracts: "Cigna, UnitedHealthcare",
     reviewsList: DUMMY_REVIEWS_2,
+    experienceList: [
+      {
+        role: "Head of Orthopedics",
+        hospital: "Sweden Ghana Medical Centre",
+        period: "2017 - Present",
+        description: "Directing the orthopedics clinic, leading surgeries for knee/hip replacements, and managing rehabilitation programs.",
+      },
+      {
+        role: "Orthopedic Surgeon",
+        hospital: "Korle Bu Teaching Hospital",
+        period: "2012 - 2017",
+        description: "Performed reconstructive and trauma surgeries, ran weekly post-op outpatient follow-ups.",
+      },
+      {
+        role: "Orthopedic Resident",
+        hospital: "Komfo Anokye Teaching Hospital",
+        period: "2009 - 2012",
+        description: "Completed training in pediatric orthopedics, surgical ward management, and trauma emergency procedures.",
+      },
+    ],
+    educationList: [
+      {
+        degree: "Fellowship in Orthopedic Surgery",
+        institution: "West African College of Surgeons",
+        year: "2012",
+      },
+      {
+        degree: "Doctor of Medicine (M.D.)",
+        institution: "Kwame Nkrumah University of Science and Technology",
+        year: "2008",
+      },
+    ],
   },
 ];
 
