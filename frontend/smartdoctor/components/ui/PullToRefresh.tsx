@@ -214,7 +214,9 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
   ...restProps
 }) => {
   const [internalState, setInternalState] = useState<PullState>("idle");
+  const [contentInsetTop, setContentInsetTop] = useState(refreshing ? REFRESH_HEIGHT : 0);
   const prevRefreshing = useRef(refreshing);
+  const internalRef = useRef<ScrollView>(null);
 
   // Shared values
   const scrollY = useSharedValue(0);
@@ -239,19 +241,38 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
       
-      // Keep success message visible for 800ms, then collapse
+      // Keep success message visible for 800ms, then collapse smoothly
       setTimeout(() => {
-        translationY.value = withSpring(0, { damping: 15, stiffness: 100 }, (finished) => {
-          if (finished) {
-            runOnJS(setInternalState)("idle");
-            runOnJS(runOnJSResetHaptic)();
-          }
-        });
+        if (Platform.OS === "ios") {
+          // Smoothly scroll back on iOS
+          internalRef.current?.scrollTo({ y: 0, animated: true });
+          
+          // Wait for scroll animation to complete before clearing inset
+          setTimeout(() => {
+            setContentInsetTop(0);
+            setInternalState("idle");
+            runOnJSResetHaptic();
+          }, 350);
+        } else {
+          translationY.value = withSpring(0, { damping: 18, stiffness: 90 }, (finished) => {
+            if (finished) {
+              runOnJS(setInternalState)("idle");
+              runOnJS(runOnJSResetHaptic)();
+            }
+          });
+        }
       }, 800);
     } else if (!prevRefreshing.current && refreshing) {
       // Direct update of refreshing state by parent
-      setInternalState("refreshing");
-      translationY.value = withSpring(REFRESH_HEIGHT, { damping: 15, stiffness: 100 });
+      if (internalState !== "refreshing" && internalState !== "success") {
+        setInternalState("refreshing");
+        if (Platform.OS === "ios") {
+          setContentInsetTop(REFRESH_HEIGHT);
+          internalRef.current?.scrollTo({ y: 0, animated: true });
+        } else {
+          translationY.value = withSpring(REFRESH_HEIGHT, { damping: 18, stiffness: 90 });
+        }
+      }
     }
     prevRefreshing.current = refreshing;
   }, [refreshing]);
@@ -265,6 +286,12 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
     setInternalState("refreshing");
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    if (Platform.OS === "ios") {
+      const currentY = scrollY.value;
+      setContentInsetTop(REFRESH_HEIGHT);
+      // Compensate for coordinate shift instantly to prevent layout jump
+      internalRef.current?.scrollTo({ y: currentY + REFRESH_HEIGHT, animated: false });
     }
     onRefresh();
   };
@@ -394,6 +421,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
             </Animated.View>
             <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
               <AnimatedScrollView
+                ref={internalRef}
                 {...restProps}
                 onScroll={androidScrollHandler}
                 scrollEventThrottle={16}
@@ -416,14 +444,14 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
         <RefreshHeader pullProgress={pullProgress} state={internalState} />
       </Animated.View>
       <AnimatedScrollView
+        ref={internalRef}
         {...restProps}
         onScroll={iosScrollHandler}
         scrollEventThrottle={16}
         className={className}
         contentContainerStyle={contentContainerStyle}
         // Native contentInset holds scrollview open during refreshing
-        contentInset={{ top: refreshing ? REFRESH_HEIGHT : 0 }}
-        contentOffset={refreshing && scrollY.value === 0 ? { x: 0, y: -REFRESH_HEIGHT } : undefined}
+        contentInset={{ top: contentInsetTop }}
       >
         {children}
       </AnimatedScrollView>
@@ -442,7 +470,9 @@ export function PullToRefreshFlatList<T>({
   ...restProps
 }: PullToRefreshFlatListProps<T>) {
   const [internalState, setInternalState] = useState<PullState>("idle");
+  const [contentInsetTop, setContentInsetTop] = useState(refreshing ? REFRESH_HEIGHT : 0);
   const prevRefreshing = useRef(refreshing);
+  const internalRef = useRef<FlatList>(null);
 
   // Shared values
   const scrollY = useSharedValue(0);
@@ -466,17 +496,37 @@ export function PullToRefreshFlatList<T>({
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
       
+      // Keep success message visible for 800ms, then collapse smoothly
       setTimeout(() => {
-        translationY.value = withSpring(0, { damping: 15, stiffness: 100 }, (finished) => {
-          if (finished) {
-            runOnJS(setInternalState)("idle");
-            runOnJS(runOnJSResetHaptic)();
-          }
-        });
+        if (Platform.OS === "ios") {
+          // Smoothly scroll back on iOS
+          internalRef.current?.scrollToOffset({ offset: 0, animated: true });
+          
+          // Wait for scroll animation to complete before clearing inset
+          setTimeout(() => {
+            setContentInsetTop(0);
+            setInternalState("idle");
+            runOnJSResetHaptic();
+          }, 350);
+        } else {
+          translationY.value = withSpring(0, { damping: 18, stiffness: 90 }, (finished) => {
+            if (finished) {
+              runOnJS(setInternalState)("idle");
+              runOnJS(runOnJSResetHaptic)();
+            }
+          });
+        }
       }, 800);
     } else if (!prevRefreshing.current && refreshing) {
-      setInternalState("refreshing");
-      translationY.value = withSpring(REFRESH_HEIGHT, { damping: 15, stiffness: 100 });
+      if (internalState !== "refreshing" && internalState !== "success") {
+        setInternalState("refreshing");
+        if (Platform.OS === "ios") {
+          setContentInsetTop(REFRESH_HEIGHT);
+          internalRef.current?.scrollToOffset({ offset: 0, animated: true });
+        } else {
+          translationY.value = withSpring(REFRESH_HEIGHT, { damping: 18, stiffness: 90 });
+        }
+      }
     }
     prevRefreshing.current = refreshing;
   }, [refreshing]);
@@ -489,6 +539,12 @@ export function PullToRefreshFlatList<T>({
     setInternalState("refreshing");
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    if (Platform.OS === "ios") {
+      const currentY = scrollY.value;
+      setContentInsetTop(REFRESH_HEIGHT);
+      // Compensate for coordinate shift instantly to prevent layout jump
+      internalRef.current?.scrollToOffset({ offset: currentY + REFRESH_HEIGHT, animated: false });
     }
     onRefresh();
   };
@@ -613,6 +669,7 @@ export function PullToRefreshFlatList<T>({
             </Animated.View>
             <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
               <AnimatedFlatList
+                ref={internalRef}
                 {...restProps}
                 onScroll={androidScrollHandler}
                 scrollEventThrottle={16}
@@ -633,13 +690,13 @@ export function PullToRefreshFlatList<T>({
         <RefreshHeader pullProgress={pullProgress} state={internalState} />
       </Animated.View>
       <AnimatedFlatList
+        ref={internalRef}
         {...restProps}
         onScroll={iosScrollHandler}
         scrollEventThrottle={16}
         className={className}
         contentContainerStyle={contentContainerStyle}
-        contentInset={{ top: refreshing ? REFRESH_HEIGHT : 0 }}
-        contentOffset={refreshing && scrollY.value === 0 ? { x: 0, y: -REFRESH_HEIGHT } : undefined}
+        contentInset={{ top: contentInsetTop }}
       />
     </View>
   );
