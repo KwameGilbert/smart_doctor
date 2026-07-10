@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Image } from "expo-image";
 import SearchDiscover from "../../components/SearchDiscover";
+import { PullToRefresh } from "../../components/ui/PullToRefresh";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -38,7 +39,18 @@ export default function HomeScreen() {
   const [phrase, setPhrase] = React.useState("");
   const [isSearchFocused, setIsSearchFocused] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [refreshing, setRefreshing] = React.useState(false);
   const inputRef = React.useRef<TextInput>(null);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // Simulate API request to refresh dashboard information
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Select a new random health greeting phrase
+    const randomPhrase = HEALTH_PHRASES[Math.floor(Math.random() * HEALTH_PHRASES.length)];
+    setPhrase(randomPhrase);
+    setRefreshing(false);
+  };
 
   React.useEffect(() => {
     const randomPhrase = HEALTH_PHRASES[Math.floor(Math.random() * HEALTH_PHRASES.length)];
@@ -89,7 +101,9 @@ export default function HomeScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardContainer}
       >
-        <ScrollView
+        <PullToRefresh
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           className="flex-1 px-6 pt-4"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -117,10 +131,10 @@ export default function HomeScreen() {
                   onPress={() => router.push("/doctor-chats")}
                   className="p-2 relative mr-0.5"
                 >
-                  <Ionicons name="chatbubble-outline" size={25} color="#1E293B" />
+                  <Ionicons name="chatbubbles-outline" size={25} color="#1E293B" />
                   <View className="absolute top-1 right-1 w-4 h-4 bg-[#1D4ED8] rounded-full border border-white items-center justify-center">
                     <Text style={{ fontSize: 9 }} className="text-white font-bold text-center leading-none">
-                      1
+                      1r
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -302,9 +316,9 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              {/* All Doctors */}
+              {/* Other Doctors */}
               <View className="mb-8">
-                <Text className="text-lg font-bold text-slate-900 mb-4">All Doctors</Text>
+                <Text className="text-lg font-bold text-slate-900 mb-4">Other Doctors</Text>
                 {OTHER_DOCTORS.map((doc) => (
                   <TouchableOpacity
                     key={doc.id}
@@ -341,7 +355,7 @@ export default function HomeScreen() {
               </View>
             </View>
           )}
-        </ScrollView>
+        </PullToRefresh>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
