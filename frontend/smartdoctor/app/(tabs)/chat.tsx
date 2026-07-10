@@ -1,10 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
   Platform,
   UIManager,
@@ -15,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import ChatInput from "../../components/ChatInput";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -30,13 +29,13 @@ interface Message {
   fileName?: string;
   fileSize?: string;
   audioDuration?: string;
-  timestamp: string;
   transcription?: string;
+  timestamp: string;
 }
 
 const STARTER_PROMPTS = [
-  { text: "Check symptoms", icon: "pulse", query: "I have a headache, fatigue, and a mild fever. What should I do?" },
-  { text: "Analyze report", icon: "document-text", query: "Can you help me understand my blood test report?", attachMockFile: true },
+  { text: "Lab Results", icon: "document-text", query: "Explain my blood test report and verify if values are normal.", attachMockFile: true },
+  { text: "Headache guidance", icon: "head", query: "I have a sharp pain behind my eyes. What could it be?" },
   { text: "Skin issues", icon: "sparkles", query: "I have an itchy red rash on my hand. What could it be?", attachMockImage: true },
   { text: "Drug info", icon: "medkit", query: "What are the common side effects of Amoxicillin?" },
 ];
@@ -50,75 +49,32 @@ export default function ChatScreen() {
       timestamp: "Just now",
     },
   ]);
-  const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
-
-  // Attachment states
-  const [attachedImage, setAttachedImage] = useState<string | null>(null);
-  const [attachedFile, setAttachedFile] = useState<{ name: string; size: string } | null>(null);
-  const [attachedAudio, setAttachedAudio] = useState<{ name: string; duration: string } | null>(null);
-
-  // Voice recording states
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const recordingTimer = useRef<any>(null);
-
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Voice note timer effect
-  useEffect(() => {
-    if (isRecording) {
-      recordingTimer.current = setInterval(() => {
-        setRecordingSeconds((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (recordingTimer.current) {
-        clearInterval(recordingTimer.current);
-      }
-      setRecordingSeconds(0);
+  const handleSend = (
+    text: string,
+    attachments: {
+      image?: string;
+      file?: { name: string; size: string };
+      audio?: { name: string; duration: string };
     }
-    return () => {
-      if (recordingTimer.current) clearInterval(recordingTimer.current);
-    };
-  }, [isRecording]);
-
-  const formatRecordingTime = (secs: number) => {
-    const mins = Math.floor(secs / 60);
-    const remainingSecs = secs % 60;
-    return `${mins}:${remainingSecs.toString().padStart(2, "0")}`;
-  };
-
-  const handleSend = (overrideText?: string, overrideAttachments?: { image?: string; file?: { name: string; size: string }; audio?: { name: string; duration: string } }) => {
-    const textToSend = overrideText !== undefined ? overrideText : inputText;
-    const imgToSend = overrideAttachments ? overrideAttachments.image : attachedImage;
-    const fileToSend = overrideAttachments ? overrideAttachments.file : attachedFile;
-    const audioToSend = overrideAttachments ? overrideAttachments.audio : attachedAudio;
-
-    if (!textToSend.trim() && !imgToSend && !fileToSend && !audioToSend) return;
+  ) => {
+    const { image, file, audio } = attachments;
 
     const userMsg: Message = {
       id: `msg-${Date.now()}`,
       sender: "user",
-      text: textToSend || undefined,
-      imageUri: imgToSend || undefined,
-      fileName: fileToSend?.name,
-      fileSize: fileToSend?.size,
-      audioDuration: audioToSend?.duration,
+      text: text || undefined,
+      imageUri: image || undefined,
+      fileName: file?.name,
+      fileSize: file?.size,
+      audioDuration: audio?.duration,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages((prev) => [...prev, userMsg]);
-
-    // Clear Staged UI States
-    setInputText("");
-    setAttachedImage(null);
-    setAttachedFile(null);
-    setAttachedAudio(null);
-    setShowAttachmentMenu(false);
-    
-    // Auto Scroll to bottom
     setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
 
     // Simulate AI Advisor Response
@@ -127,15 +83,15 @@ export default function ChatScreen() {
       let aiResponseText = "";
       let transcriptionText = "";
 
-      if (imgToSend) {
+      if (image) {
         aiResponseText = "🔍 **Skin Concern Analysis**:\nBased on the photo uploaded, the symptoms resemble a localized case of contact dermatitis (mild skin rash). This can occur from contact with certain soaps, plants, or fabrics.\n\n**Guidelines:**\n• Wash the area with mild, fragrance-free soap.\n• Apply a cool compress to soothe itching.\n• Avoid scratching to prevent secondary infections.\n\nIf you experience spreading, pain, or pus, you should consult a Dermatologist. You can browse specialists in our **Doctors** tab.";
-      } else if (fileToSend) {
-        aiResponseText = "📄 **Lab Report Summary**:\nI have completed analyzing the medical document `" + fileToSend.name + "`:\n• **Hemoglobin**: 14.1 g/dL (Normal: 13.8–17.2 g/dL)\n• **White Blood Cells**: 11,200 /mcL (Slightly Elevated; normal is 4,500–11,000 /mcL)\n• **Platelet Count**: 260,000 /mcL (Normal)\n\n**Assessment:** The slight elevation in WBC might indicate a mild defense response to minor infection or inflammation. There are no alarming values here. Please schedule a consult to review these results in detail.";
-      } else if (audioToSend) {
+      } else if (file) {
+        aiResponseText = "📄 **Lab Report Summary**:\nI have completed analyzing the medical document `" + file.name + "`:\n• **Hemoglobin**: 14.1 g/dL (Normal: 13.8–17.2 g/dL)\n• **White Blood Cells**: 11,200 /mcL (Slightly Elevated; normal is 4,500–11,000 /mcL)\n• **Platelet Count**: 260,000 /mcL (Normal)\n\n**Assessment:** The slight elevation in WBC might indicate a mild defense response to minor infection or inflammation. There are no alarming values here. Please schedule a consult to review these results in detail.";
+      } else if (audio) {
         transcriptionText = "I've had a sore throat and a dry ticklish cough since yesterday.";
         aiResponseText = "🎙️ *(Transcribed Audio)*:\n\"" + transcriptionText + "\"\n\n**Symptom Guidance:**\nA sudden sore throat and dry cough can be caused by viral irritation or allergies. \n\n**Suggested Relief:**\n• Sip warm water with honey or lemon.\n• Try saline gargles to reduce throat swelling.\n• Use a humidifier to keep airways moist.\n\nIf symptoms are accompanied by high fever or shortness of breath, please consult a practitioner immediately.";
       } else {
-        const query = textToSend.toLowerCase();
+        const query = text.toLowerCase();
         if (query.includes("headache") || query.includes("migraine")) {
           aiResponseText = "🤕 **Headache Advisory**:\nA headache can arise from dehydration, tension, stress, or eye strain.\n\n**Self-Care steps:**\n1. Drink 1-2 large glasses of water immediately.\n2. Rest in a dark, quiet room.\n3. Apply a cold compress to your forehead.\n\n⚠️ **Warning**: Seek immediate emergency care if your headache is sudden and extremely severe (thunderclap), or is accompanied by confusion, stiff neck, fever, or vision issues.";
         } else if (query.includes("fever") || query.includes("temperature")) {
@@ -165,43 +121,13 @@ export default function ChatScreen() {
   };
 
   const handleStarterPrompt = (prompt: typeof STARTER_PROMPTS[0]) => {
-    let mockAttach: any = undefined;
+    let mockAttach: any = {};
     if (prompt.attachMockImage) {
       mockAttach = { image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=300" };
     } else if (prompt.attachMockFile) {
       mockAttach = { file: { name: "Blood_Test_Report.pdf", size: "1.4 MB" } };
     }
     handleSend(prompt.query, mockAttach);
-  };
-
-  // Simulators for attachments
-  const handleAttachImage = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setAttachedImage("https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=300"); // Rash image mock
-    setAttachedFile(null);
-    setAttachedAudio(null);
-    setShowAttachmentMenu(false);
-  };
-
-  const handleAttachFile = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setAttachedFile({ name: "Lab_Report_072026.pdf", size: "1.4 MB" });
-    setAttachedImage(null);
-    setAttachedAudio(null);
-    setShowAttachmentMenu(false);
-  };
-
-  const handleStartRecording = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsRecording(true);
-  };
-
-  const handleStopRecording = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsRecording(false);
-    setAttachedAudio({ name: "Voice Note.mp3", duration: formatRecordingTime(recordingSeconds) });
-    setAttachedImage(null);
-    setAttachedFile(null);
   };
 
   const handleClearChat = () => {
@@ -398,151 +324,11 @@ export default function ChatScreen() {
           )}
         </ScrollView>
 
-        {/* Attachment Preview Bar */}
-        {(attachedImage || attachedFile || attachedAudio) && (
-          <View className="bg-slate-50 border-t border-slate-100 px-6 py-3.5 flex-row gap-3">
-            {attachedImage && (
-              <View className="relative">
-                <Image source={{ uri: attachedImage }} style={{ width: 60, height: 60, borderRadius: 12 }} />
-                <TouchableOpacity
-                  onPress={() => setAttachedImage(null)}
-                  className="absolute -top-1.5 -right-1.5 bg-slate-800 rounded-full w-5 h-5 items-center justify-center border border-white"
-                >
-                  <Ionicons name="close" size={12} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {attachedFile && (
-              <View className="bg-white border border-slate-200 px-3.5 py-2.5 rounded-2xl flex-row items-center relative max-w-[220px] shadow-sm">
-                <Ionicons name="document-text" size={20} color="#EF4444" />
-                <View className="ml-2 mr-3">
-                  <Text className="text-xs text-slate-800 font-bold" numberOfLines={1}>
-                    {attachedFile.name}
-                  </Text>
-                  <Text className="text-[9px] text-slate-400 font-semibold">{attachedFile.size}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setAttachedFile(null)}
-                  className="absolute -top-1.5 -right-1.5 bg-slate-800 rounded-full w-5 h-5 items-center justify-center border border-white"
-                >
-                  <Ionicons name="close" size={12} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {attachedAudio && (
-              <View className="bg-white border border-slate-200 px-3.5 py-2.5 rounded-2xl flex-row items-center relative shadow-sm">
-                <Ionicons name="mic" size={18} color="#1D4ED8" />
-                <View className="ml-2 mr-3">
-                  <Text className="text-xs text-slate-800 font-bold">{attachedAudio.name}</Text>
-                  <Text className="text-[9px] text-slate-400 font-semibold">{attachedAudio.duration}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setAttachedAudio(null)}
-                  className="absolute -top-1.5 -right-1.5 bg-slate-800 rounded-full w-5 h-5 items-center justify-center border border-white"
-                >
-                  <Ionicons name="close" size={12} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Input Bar Section */}
-        <View className="px-5 py-4 bg-white border-t border-slate-100 flex-row items-center gap-3">
-          {isRecording ? (
-            /* Recording State Input Block */
-            <View className="flex-1 bg-red-50/50 border border-red-100 rounded-full px-5 py-3 flex-row items-center justify-between">
-              <View className="flex-row items-center">
-                <View className="w-2.5 h-2.5 bg-red-500 rounded-full mr-2" />
-                <Text className="text-xs text-red-600 font-bold">Recording {formatRecordingTime(recordingSeconds)}</Text>
-              </View>
-              <TouchableOpacity onPress={handleStopRecording} className="px-3.5 py-1.5 bg-red-500 rounded-full">
-                <Text className="text-white text-[10px] font-bold uppercase tracking-wider">Done</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            /* Standard TextInput State Block */
-            <>
-              {/* Attachment Plus button */}
-              <TouchableOpacity
-                onPress={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                className={`w-11 h-11 items-center justify-center rounded-full border ${
-                  showAttachmentMenu ? "bg-slate-100 border-slate-200" : "bg-slate-50 border-slate-100"
-                }`}
-              >
-                <Ionicons
-                  name={showAttachmentMenu ? "close" : "add"}
-                  size={22}
-                  color={showAttachmentMenu ? "#EF4444" : "#64748B"}
-                />
-              </TouchableOpacity>
-
-              {/* TextInput wrapper */}
-              <View className="flex-1 bg-slate-100 px-5 py-3 rounded-full border border-slate-200/50 flex-row items-center">
-                <TextInput
-                  placeholder="Type health question..."
-                  placeholderTextColor="#94A3B8"
-                  value={inputText}
-                  onChangeText={setInputText}
-                  multiline
-                  style={{ padding: 0, maxHeight: 60 }}
-                  className="flex-1 text-slate-800 text-sm font-medium"
-                />
-              </View>
-            </>
-          )}
-
-          {/* Action button (Send or Record) */}
-          {!isRecording && (
-            <TouchableOpacity
-              onPress={() => {
-                if (inputText.trim() || attachedImage || attachedFile || attachedAudio) {
-                  handleSend();
-                } else {
-                  handleStartRecording();
-                }
-              }}
-              className="w-11 h-11 bg-[#1D4ED8] rounded-full items-center justify-center shadow-md shadow-blue-500/20"
-            >
-              <Ionicons
-                name={
-                  inputText.trim() || attachedImage || attachedFile || attachedAudio
-                    ? "send"
-                    : "mic"
-                }
-                size={18}
-                color="#FFFFFF"
-                style={inputText.trim() || attachedImage || attachedFile || attachedAudio ? { marginLeft: 2 } : {}}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Attachment Options Drawer */}
-        {showAttachmentMenu && (
-          <View className="bg-slate-50 border-t border-slate-200 px-6 py-5 flex-row justify-around">
-            <TouchableOpacity onPress={handleAttachImage} className="items-center">
-              <View className="w-12 h-12 bg-blue-100 rounded-2xl items-center justify-center mb-2 shadow-sm">
-                <Ionicons name="image" size={22} color="#1D4ED8" />
-              </View>
-              <Text className="text-[10px] text-slate-600 font-bold">Photo</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleAttachFile} className="items-center">
-              <View className="w-12 h-12 bg-red-100 rounded-2xl items-center justify-center mb-2 shadow-sm">
-                <Ionicons name="document-text" size={22} color="#EF4444" />
-              </View>
-              <Text className="text-[10px] text-slate-600 font-bold">Lab Document</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleStartRecording} className="items-center">
-              <View className="w-12 h-12 bg-purple-100 rounded-2xl items-center justify-center mb-2 shadow-sm">
-                <Ionicons name="mic" size={22} color="#8B5CF6" />
-              </View>
-              <Text className="text-[10px] text-slate-600 font-bold">Voice Note</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* WhatsApp Reusable Chat Input Component */}
+        <ChatInput
+          placeholder="Describe your symptoms or ask a health question..."
+          onSend={handleSend}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

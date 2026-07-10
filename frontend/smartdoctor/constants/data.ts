@@ -422,3 +422,35 @@ export const DOCTOR_CHATS: ChatConversation[] = [
     online: true,
   },
 ];
+
+export interface MedicalRecord {
+  id: string;
+  name: string;
+  date: string;
+  size: string;
+  type: "pdf" | "image";
+}
+
+export const DUMMY_MEDICAL_RECORDS: MedicalRecord[] = [
+  {
+    id: "rec-1",
+    name: "Blood_Test_Report.pdf",
+    date: "July 02, 2026",
+    size: "1.2 MB",
+    type: "pdf",
+  },
+  {
+    id: "rec-2",
+    name: "Cardiology_Prescription.pdf",
+    date: "Jan 22, 2025",
+    size: "340 KB",
+    type: "pdf",
+  },
+  {
+    id: "rec-3",
+    name: "Chest_XRay_Scan.png",
+    date: "Nov 15, 2024",
+    size: "4.5 MB",
+    type: "image",
+  },
+];

@@ -14,44 +14,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import { DUMMY_MEDICAL_RECORDS, MedicalRecord } from "../../constants/data";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-interface MedicalRecord {
-  id: string;
-  name: string;
-  date: string;
-  size: string;
-  type: "pdf" | "image";
-}
-
 export default function ProfileScreen() {
-  const [records, setRecords] = useState<MedicalRecord[]>([
-    {
-      id: "rec-1",
-      name: "Blood_Test_Report.pdf",
-      date: "July 02, 2026",
-      size: "1.2 MB",
-      type: "pdf",
-    },
-    {
-      id: "rec-2",
-      name: "Cardiology_Prescription.pdf",
-      date: "Jan 22, 2025",
-      size: "340 KB",
-      type: "pdf",
-    },
-    {
-      id: "rec-3",
-      name: "Chest_XRay_Scan.png",
-      date: "Nov 15, 2024",
-      size: "4.5 MB",
-      type: "image",
-    },
-  ]);
+  const [records, setRecords] = useState<MedicalRecord[]>(DUMMY_MEDICAL_RECORDS);
 
   const handleUploadDocument = () => {
     const mockNames = [

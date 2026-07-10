@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
   Platform,
   UIManager,
@@ -18,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { ALL_DOCTORS } from "../../constants/data";
+import ChatInput from "../../components/ChatInput";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -60,19 +60,7 @@ export default function DoctorChatScreen() {
     },
   ]);
 
-  const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
-
-  // Attachment states
-  const [attachedImage, setAttachedImage] = useState<string | null>(null);
-  const [attachedFile, setAttachedFile] = useState<{ name: string; size: string } | null>(null);
-  const [attachedAudio, setAttachedAudio] = useState<{ name: string; duration: string } | null>(null);
-
-  // Voice recording states
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const recordingTimer = useRef<any>(null);
 
   // VOIP Call states
   const [callType, setCallType] = useState<"audio" | "video" | null>(null);
@@ -87,21 +75,6 @@ export default function DoctorChatScreen() {
   const [isCameraOn, setIsCameraOn] = useState(true);
 
   const scrollViewRef = useRef<ScrollView>(null);
-
-  // Recording Timer effect
-  useEffect(() => {
-    if (isRecording) {
-      recordingTimer.current = setInterval(() => {
-        setRecordingSeconds((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (recordingTimer.current) clearInterval(recordingTimer.current);
-      setRecordingSeconds(0);
-    }
-    return () => {
-      if (recordingTimer.current) clearInterval(recordingTimer.current);
-    };
-  }, [isRecording]);
 
   // VOIP Call duration timer
   useEffect(() => {
@@ -124,48 +97,43 @@ export default function DoctorChatScreen() {
     return `${mins}:${remainingSecs.toString().padStart(2, "0")}`;
   };
 
-  const handleSend = (overrideText?: string, overrideAttachments?: { image?: string; file?: { name: string; size: string }; audio?: { name: string; duration: string } }) => {
-    const textToSend = overrideText !== undefined ? overrideText : inputText;
-    const imgToSend = overrideAttachments ? overrideAttachments.image : attachedImage;
-    const fileToSend = overrideAttachments ? overrideAttachments.file : attachedFile;
-    const audioToSend = overrideAttachments ? overrideAttachments.audio : attachedAudio;
-
-    if (!textToSend.trim() && !imgToSend && !fileToSend && !audioToSend) return;
+  const handleSend = (
+    text: string,
+    attachments: {
+      image?: string;
+      file?: { name: string; size: string };
+      audio?: { name: string; duration: string };
+    }
+  ) => {
+    const { image, file, audio } = attachments;
 
     const userMsg: Message = {
       id: `msg-${Date.now()}`,
       sender: "user",
-      text: textToSend || undefined,
-      imageUri: imgToSend || undefined,
-      fileName: fileToSend?.name,
-      fileSize: fileToSend?.size,
-      audioDuration: audioToSend?.duration,
+      text: text || undefined,
+      imageUri: image || undefined,
+      fileName: file?.name,
+      fileSize: file?.size,
+      audioDuration: audio?.duration,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages((prev) => [...prev, userMsg]);
-
-    setInputText("");
-    setAttachedImage(null);
-    setAttachedFile(null);
-    setAttachedAudio(null);
-    setShowAttachmentMenu(false);
-
     setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
 
     // Simulate Doctor Response
     setIsTyping(true);
     setTimeout(() => {
       let docText = "";
-      if (imgToSend) {
+      if (image) {
         docText = "I see. Let's keep it under observation. Clean it with warm water and avoid scratching. I'll write a prescription if it persists.";
-      } else if (fileToSend) {
+      } else if (file) {
         docText = "Thank you for sending the report. I will check it in detail and write back to you shortly.";
-      } else if (audioToSend) {
+      } else if (audio) {
         docText = "Received your message. It sounds like you are recovering well. Just continue with the prescribed dosage.";
       } else {
-        const query = textToSend.toLowerCase();
+        const query = text.toLowerCase();
         if (query.includes("pill") || query.includes("medicine") || query.includes("drug")) {
           docText = "Make sure you take the medication strictly after meals as specified. Let me know if you experience any side effects.";
         } else if (query.includes("pain") || query.includes("hurt")) {
@@ -189,36 +157,6 @@ export default function DoctorChatScreen() {
     }, 1500);
   };
 
-  // Simulators for attachments
-  const handleAttachImage = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setAttachedImage("https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=300");
-    setAttachedFile(null);
-    setAttachedAudio(null);
-    setShowAttachmentMenu(false);
-  };
-
-  const handleAttachFile = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setAttachedFile({ name: "Lab_Result_Data.pdf", size: "850 KB" });
-    setAttachedImage(null);
-    setAttachedAudio(null);
-    setShowAttachmentMenu(false);
-  };
-
-  const handleStartRecording = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsRecording(true);
-  };
-
-  const handleStopRecording = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsRecording(false);
-    setAttachedAudio({ name: "Voice Note.mp3", duration: formatTime(recordingSeconds) });
-    setAttachedImage(null);
-    setAttachedFile(null);
-  };
-
   // VOIP Call Launchers
   const handleStartCall = (type: "audio" | "video") => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -228,7 +166,6 @@ export default function DoctorChatScreen() {
     setIsSpeakerOn(false);
     setIsCameraOn(true);
 
-    // Transition from Ringing to Connected after 3 seconds
     callStatusTimeout.current = setTimeout(() => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setCallStatus("connected");
@@ -257,7 +194,7 @@ export default function DoctorChatScreen() {
           <View className="relative">
             <Image
               source={{ uri: doctor.image }}
-              style={{ width: 40, height: 40, borderRadius: 12 }}
+              style={{ width: 40, height: 40, borderRadius: 20 }}
               contentFit="cover"
             />
             <View className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white" />
@@ -293,7 +230,7 @@ export default function DoctorChatScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
       >
         {/* Messages List */}
         <ScrollView
@@ -314,7 +251,7 @@ export default function DoctorChatScreen() {
                 {!isUser && (
                   <Image
                     source={{ uri: doctor.image }}
-                    style={{ width: 32, height: 32, borderRadius: 10, marginRight: 8, marginTop: 2 }}
+                    style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8, marginTop: 2 }}
                     contentFit="cover"
                   />
                 )}
@@ -406,7 +343,7 @@ export default function DoctorChatScreen() {
             <View className="flex-row mb-5 justify-start">
               <Image
                 source={{ uri: doctor.image }}
-                style={{ width: 32, height: 32, borderRadius: 10, marginRight: 8, marginTop: 2 }}
+                style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8, marginTop: 2 }}
                 contentFit="cover"
               />
               <View className="bg-white border border-slate-100 rounded-3xl rounded-tl-none p-4 shadow-sm shadow-slate-100/40">
@@ -420,148 +357,11 @@ export default function DoctorChatScreen() {
           )}
         </ScrollView>
 
-        {/* Attachment Preview Bar */}
-        {(attachedImage || attachedFile || attachedAudio) && (
-          <View className="bg-slate-50 border-t border-slate-100 px-6 py-3.5 flex-row gap-3">
-            {attachedImage && (
-              <View className="relative">
-                <Image source={{ uri: attachedImage }} style={{ width: 60, height: 60, borderRadius: 12 }} />
-                <TouchableOpacity
-                  onPress={() => setAttachedImage(null)}
-                  className="absolute -top-1.5 -right-1.5 bg-slate-800 rounded-full w-5 h-5 items-center justify-center border border-white"
-                >
-                  <Ionicons name="close" size={12} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {attachedFile && (
-              <View className="bg-white border border-slate-200 px-3.5 py-2.5 rounded-2xl flex-row items-center relative max-w-[220px] shadow-sm">
-                <Ionicons name="document-text" size={20} color="#EF4444" />
-                <View className="ml-2 mr-3">
-                  <Text className="text-xs text-slate-800 font-bold" numberOfLines={1}>
-                    {attachedFile.name}
-                  </Text>
-                  <Text className="text-[9px] text-slate-400 font-semibold">{attachedFile.size}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setAttachedFile(null)}
-                  className="absolute -top-1.5 -right-1.5 bg-slate-800 rounded-full w-5 h-5 items-center justify-center border border-white"
-                >
-                  <Ionicons name="close" size={12} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            )}
-            {attachedAudio && (
-              <View className="bg-white border border-slate-200 px-3.5 py-2.5 rounded-2xl flex-row items-center relative shadow-sm">
-                <Ionicons name="mic" size={18} color="#1D4ED8" />
-                <View className="ml-2 mr-3">
-                  <Text className="text-xs text-slate-800 font-bold">{attachedAudio.name}</Text>
-                  <Text className="text-[9px] text-slate-400 font-semibold">{attachedAudio.duration}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setAttachedAudio(null)}
-                  className="absolute -top-1.5 -right-1.5 bg-slate-800 rounded-full w-5 h-5 items-center justify-center border border-white"
-                >
-                  <Ionicons name="close" size={12} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Input Bar */}
-        <View className="px-5 py-4 bg-white border-t border-slate-100 flex-row items-center gap-3">
-          {isRecording ? (
-            <View className="flex-1 bg-red-50/50 border border-red-100 rounded-full px-5 py-3 flex-row items-center justify-between">
-              <View className="flex-row items-center">
-                <View className="w-2.5 h-2.5 bg-red-500 rounded-full mr-2" />
-                <Text className="text-xs text-red-600 font-bold">Recording {formatTime(recordingSeconds)}</Text>
-              </View>
-              <TouchableOpacity onPress={handleStopRecording} className="px-3.5 py-1.5 bg-red-500 rounded-full">
-                <Text className="text-white text-[10px] font-bold uppercase tracking-wider">Done</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <>
-              {/* Attachment trigger */}
-              <TouchableOpacity
-                onPress={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                className={`w-11 h-11 items-center justify-center rounded-full border ${
-                  showAttachmentMenu ? "bg-slate-100 border-slate-200" : "bg-slate-50 border-slate-100"
-                }`}
-              >
-                <Ionicons
-                  name={showAttachmentMenu ? "close" : "add"}
-                  size={22}
-                  color={showAttachmentMenu ? "#EF4444" : "#64748B"}
-                />
-              </TouchableOpacity>
-
-              <View className="flex-1 bg-slate-100 px-5 py-3 rounded-full border border-slate-200/50 flex-row items-center">
-                <TextInput
-                  placeholder={`Message ${doctor.name}...`}
-                  placeholderTextColor="#94A3B8"
-                  value={inputText}
-                  onChangeText={setInputText}
-                  multiline
-                  style={{ padding: 0, maxHeight: 60 }}
-                  className="flex-1 text-slate-800 text-sm font-medium"
-                />
-              </View>
-            </>
-          )}
-
-          {/* Action button */}
-          {!isRecording && (
-            <TouchableOpacity
-              onPress={() => {
-                if (inputText.trim() || attachedImage || attachedFile || attachedAudio) {
-                  handleSend();
-                } else {
-                  handleStartRecording();
-                }
-              }}
-              className="w-11 h-11 bg-[#1D4ED8] rounded-full items-center justify-center shadow-md"
-            >
-              <Ionicons
-                name={
-                  inputText.trim() || attachedImage || attachedFile || attachedAudio
-                    ? "send"
-                    : "mic"
-                }
-                size={18}
-                color="#FFFFFF"
-                style={inputText.trim() || attachedImage || attachedFile || attachedAudio ? { marginLeft: 2 } : {}}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Attachment Options Drawer */}
-        {showAttachmentMenu && (
-          <View className="bg-slate-50 border-t border-slate-200 px-6 py-5 flex-row justify-around">
-            <TouchableOpacity onPress={handleAttachImage} className="items-center">
-              <View className="w-12 h-12 bg-blue-100 rounded-2xl items-center justify-center mb-2 shadow-sm">
-                <Ionicons name="image" size={22} color="#1D4ED8" />
-              </View>
-              <Text className="text-[10px] text-slate-600 font-bold">Photo</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleAttachFile} className="items-center">
-              <View className="w-12 h-12 bg-red-100 rounded-2xl items-center justify-center mb-2 shadow-sm">
-                <Ionicons name="document-text" size={22} color="#EF4444" />
-              </View>
-              <Text className="text-[10px] text-slate-600 font-bold">Document</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleStartRecording} className="items-center">
-              <View className="w-12 h-12 bg-purple-100 rounded-2xl items-center justify-center mb-2 shadow-sm">
-                <Ionicons name="mic" size={22} color="#8B5CF6" />
-              </View>
-              <Text className="text-[10px] text-slate-600 font-bold">Voice Note</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* WhatsApp Reusable Chat Input Component */}
+        <ChatInput
+          placeholder={`Message ${doctor.name}...`}
+          onSend={handleSend}
+        />
       </KeyboardAvoidingView>
 
       {/* VOIP CALL MODAL OVERLAY */}
@@ -575,11 +375,10 @@ export default function DoctorChatScreen() {
           /* VIDEO CALL OVERLAY */
           <View className="flex-1 bg-slate-900 justify-between py-16 px-6 relative">
             {callStatus === "ringing" ? (
-              /* Video Ringing layout */
               <View className="flex-1 items-center justify-center">
                 <Image
                   source={{ uri: doctor.image }}
-                  style={{ width: 120, height: 120, borderRadius: 30 }}
+                  style={{ width: 120, height: 120, borderRadius: 60 }}
                   contentFit="cover"
                   className="border-2 border-white/20 mb-6"
                 />
@@ -588,9 +387,7 @@ export default function DoctorChatScreen() {
                 <Text className="text-sm text-slate-400 font-medium animate-pulse">Ringing...</Text>
               </View>
             ) : (
-              /* Video Connected layout */
               <View className="flex-1 relative">
-                {/* Full-screen Remote Video View (Mock) */}
                 <View className="absolute inset-0 bg-slate-800 rounded-[32px] overflow-hidden items-center justify-center">
                   <Image
                     source={{ uri: doctor.image }}
@@ -603,14 +400,12 @@ export default function DoctorChatScreen() {
                       <Text className="text-slate-400 text-xs font-bold">Doctor's camera is off</Text>
                     </View>
                   )}
-                  {/* Call Timer Overlay */}
                   <View className="absolute top-6 left-6 bg-black/40 px-3 py-1.5 rounded-full flex-row items-center border border-white/10">
                     <View className="w-2 h-2 bg-red-500 rounded-full mr-2" />
                     <Text className="text-white text-xs font-bold">{formatTime(callSeconds)}</Text>
                   </View>
                 </View>
 
-                {/* Local Camera Picture-in-Picture Preview */}
                 <View 
                   className="absolute bottom-24 right-4 w-28 h-40 bg-slate-700 rounded-2xl overflow-hidden border border-white/20 shadow-2xl"
                   style={{ elevation: 15 }}
@@ -627,7 +422,6 @@ export default function DoctorChatScreen() {
               </View>
             )}
 
-            {/* Calling control panel */}
             <View className="flex-row justify-around items-center w-full px-6 absolute bottom-10 left-6 right-6">
               <TouchableOpacity
                 onPress={() => setIsMuted(!isMuted)}
@@ -680,7 +474,6 @@ export default function DoctorChatScreen() {
               )}
             </View>
 
-            {/* Audio call controls */}
             <View className="flex-row justify-around items-center w-full px-6 mb-4">
               <TouchableOpacity
                 onPress={() => setIsMuted(!isMuted)}
