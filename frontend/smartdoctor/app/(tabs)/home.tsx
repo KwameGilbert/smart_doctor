@@ -97,37 +97,50 @@ export default function HomeScreen() {
           {/* User Header (Hidden when search has focus) */}
           {!isSearchFocused && (
             <View className="flex-row justify-between items-center mb-8">
-              <View className="flex-row items-center">
+              <View className="flex-row items-center flex-1 pr-2">
                 <Image
                   source={{ uri: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150" }}
                   style={{ width: 46, height: 46, borderRadius: 23, marginRight: 12 }}
                   className="border-2 border-white shadow-sm"
                 />
-                <View>
-                  <Text className="text-xl font-bold text-slate-900">
+                <View className="flex-1">
+                  <Text className="text-xl font-bold text-slate-900" numberOfLines={1}>
                     Hello Elton,
                   </Text>
-                  <Text className="text-slate-500 text-xs font-medium mt-0.5">
+                  <Text className="text-slate-500 text-xs font-medium mt-0.5" numberOfLines={1}>
                     {phrase || "How are you feeling today?"}
                   </Text>
                 </View>
               </View>
-              <TouchableOpacity
-                onPress={() => router.push("/notifications")}
-                className="p-2.5 relative"
-              >
-                <Ionicons name="notifications-outline" size={26} color="#1E293B" />
-                <View className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full border border-white items-center justify-center">
-                  <Text style={{ fontSize: 9 }} className="text-white font-bold text-center leading-none">
-                    2
-                  </Text>
-                </View>
-              </TouchableOpacity>
+              <View className="flex-row items-center">
+                <TouchableOpacity
+                  onPress={() => router.push("/doctor-chats")}
+                  className="p-2 relative mr-0.5"
+                >
+                  <Ionicons name="chatbubble-outline" size={25} color="#1E293B" />
+                  <View className="absolute top-1 right-1 w-4 h-4 bg-[#1D4ED8] rounded-full border border-white items-center justify-center">
+                    <Text style={{ fontSize: 9 }} className="text-white font-bold text-center leading-none">
+                      1
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => router.push("/notifications")}
+                  className="p-2 relative"
+                >
+                  <Ionicons name="notifications-outline" size={25} color="#1E293B" />
+                  <View className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full border border-white items-center justify-center">
+                    <Text style={{ fontSize: 9 }} className="text-white font-bold text-center leading-none">
+                      2
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
 
           {/* Search Bar Wrapper */}
-          <View className="flex-row items-center mb-5">
+          <View className="flex-row items-center mb-2">
             {isSearchFocused && (
               <TouchableOpacity
                 onPress={handleCancelSearch}
@@ -271,6 +284,7 @@ export default function HomeScreen() {
                   {SPECIALTIES.map((spec) => (
                     <TouchableOpacity
                       key={spec.id}
+                      onPress={() => router.push({ pathname: "/(tabs)/doctors", params: { specialty: spec.name } })}
                       className="items-center"
                       style={{ width: "22%" }}
                     >

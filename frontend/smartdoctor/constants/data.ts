@@ -386,3 +386,39 @@ export const SPECIALTIES: Specialty[] = [
   { id: "3", name: "Dermatology", icon: "sparkles", color: "#10B981", bg: "#ECFDF5" },
   { id: "4", name: "Neurology", icon: "pulse", color: "#8B5CF6", bg: "#F5F3FF" },
 ];
+
+export interface ChatConversation {
+  id: string;
+  doctorId: string;
+  lastMessage: string;
+  time: string;
+  unreadCount: number;
+  online: boolean;
+}
+
+export const DOCTOR_CHATS: ChatConversation[] = [
+  {
+    id: "1",
+    doctorId: "1", // Dr. Rita Yeboah
+    lastMessage: "Hey Elton, make sure to take your meds on time!",
+    time: "10:14 AM",
+    unreadCount: 1,
+    online: true,
+  },
+  {
+    id: "2",
+    doctorId: "2", // Dr. Samuel Mensah
+    lastMessage: "You're welcome! Let me know if you need anything else.",
+    time: "Yesterday",
+    unreadCount: 0,
+    online: false,
+  },
+  {
+    id: "3",
+    doctorId: "3", // Dr. Emma Watson
+    lastMessage: "The rash looks much better. Keep applying the cream.",
+    time: "June 18",
+    unreadCount: 0,
+    online: true,
+  },
+];

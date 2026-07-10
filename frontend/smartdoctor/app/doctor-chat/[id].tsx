@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
   UIManager,
   LayoutAnimation,
   Alert,
+  Modal,
   KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import { ALL_DOCTORS } from "../../constants/data";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -24,32 +26,40 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 
 interface Message {
   id: string;
-  sender: "user" | "ai";
+  sender: "user" | "doctor";
   text?: string;
   imageUri?: string;
   fileName?: string;
   fileSize?: string;
   audioDuration?: string;
   timestamp: string;
-  transcription?: string;
 }
 
-const STARTER_PROMPTS = [
-  { text: "Check symptoms", icon: "pulse", query: "I have a headache, fatigue, and a mild fever. What should I do?" },
-  { text: "Analyze report", icon: "document-text", query: "Can you help me understand my blood test report?", attachMockFile: true },
-  { text: "Skin issues", icon: "sparkles", query: "I have an itchy red rash on my hand. What could it be?", attachMockImage: true },
-  { text: "Drug info", icon: "medkit", query: "What are the common side effects of Amoxicillin?" },
-];
+export default function DoctorChatScreen() {
+  const { id } = useLocalSearchParams();
+  const doctor = ALL_DOCTORS.find((d) => d.id === id) || ALL_DOCTORS[0];
 
-export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: "welcome",
-      sender: "ai",
-      text: "Hello! I am SmartDoctor AI, your virtual medical advisor. I can analyze symptoms, explain medical records, and answer health questions.\n\nFeel free to describe how you feel or attach lab reports, skin photos, or send voice messages.",
-      timestamp: "Just now",
+      id: "init-1",
+      sender: "doctor",
+      text: `Hello Elton. I've reviewed your recent checkup results. They look stable, but let's continue monitoring daily.`,
+      timestamp: "10:10 AM",
+    },
+    {
+      id: "init-2",
+      sender: "user",
+      text: "Okay, thank you doctor. I am taking the medications as prescribed.",
+      timestamp: "10:12 AM",
+    },
+    {
+      id: "init-3",
+      sender: "doctor",
+      text: "Excellent. Remember to check in if you feel any discomfort. Make sure to take your meds on time!",
+      timestamp: "10:14 AM",
     },
   ]);
+
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
@@ -64,18 +74,28 @@ export default function ChatScreen() {
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const recordingTimer = useRef<any>(null);
 
+  // VOIP Call states
+  const [callType, setCallType] = useState<"audio" | "video" | null>(null);
+  const [callStatus, setCallStatus] = useState<"ringing" | "connected" | null>(null);
+  const [callSeconds, setCallSeconds] = useState(0);
+  const callTimer = useRef<any>(null);
+  const callStatusTimeout = useRef<any>(null);
+
+  // Microphone and speaker states for calls
+  const [isMuted, setIsMuted] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
+  const [isCameraOn, setIsCameraOn] = useState(true);
+
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Voice note timer effect
+  // Recording Timer effect
   useEffect(() => {
     if (isRecording) {
       recordingTimer.current = setInterval(() => {
         setRecordingSeconds((prev) => prev + 1);
       }, 1000);
     } else {
-      if (recordingTimer.current) {
-        clearInterval(recordingTimer.current);
-      }
+      if (recordingTimer.current) clearInterval(recordingTimer.current);
       setRecordingSeconds(0);
     }
     return () => {
@@ -83,7 +103,22 @@ export default function ChatScreen() {
     };
   }, [isRecording]);
 
-  const formatRecordingTime = (secs: number) => {
+  // VOIP Call duration timer
+  useEffect(() => {
+    if (callStatus === "connected") {
+      callTimer.current = setInterval(() => {
+        setCallSeconds((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (callTimer.current) clearInterval(callTimer.current);
+      setCallSeconds(0);
+    }
+    return () => {
+      if (callTimer.current) clearInterval(callTimer.current);
+    };
+  }, [callStatus]);
+
+  const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const remainingSecs = secs % 60;
     return `${mins}:${remainingSecs.toString().padStart(2, "0")}`;
@@ -111,73 +146,53 @@ export default function ChatScreen() {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages((prev) => [...prev, userMsg]);
 
-    // Clear Staged UI States
     setInputText("");
     setAttachedImage(null);
     setAttachedFile(null);
     setAttachedAudio(null);
     setShowAttachmentMenu(false);
-    
-    // Auto Scroll to bottom
+
     setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
 
-    // Simulate AI Advisor Response
+    // Simulate Doctor Response
     setIsTyping(true);
     setTimeout(() => {
-      let aiResponseText = "";
-      let transcriptionText = "";
-
+      let docText = "";
       if (imgToSend) {
-        aiResponseText = "🔍 **Skin Concern Analysis**:\nBased on the photo uploaded, the symptoms resemble a localized case of contact dermatitis (mild skin rash). This can occur from contact with certain soaps, plants, or fabrics.\n\n**Guidelines:**\n• Wash the area with mild, fragrance-free soap.\n• Apply a cool compress to soothe itching.\n• Avoid scratching to prevent secondary infections.\n\nIf you experience spreading, pain, or pus, you should consult a Dermatologist. You can browse specialists in our **Doctors** tab.";
+        docText = "I see. Let's keep it under observation. Clean it with warm water and avoid scratching. I'll write a prescription if it persists.";
       } else if (fileToSend) {
-        aiResponseText = "📄 **Lab Report Summary**:\nI have completed analyzing the medical document `" + fileToSend.name + "`:\n• **Hemoglobin**: 14.1 g/dL (Normal: 13.8–17.2 g/dL)\n• **White Blood Cells**: 11,200 /mcL (Slightly Elevated; normal is 4,500–11,000 /mcL)\n• **Platelet Count**: 260,000 /mcL (Normal)\n\n**Assessment:** The slight elevation in WBC might indicate a mild defense response to minor infection or inflammation. There are no alarming values here. Please schedule a consult to review these results in detail.";
+        docText = "Thank you for sending the report. I will check it in detail and write back to you shortly.";
       } else if (audioToSend) {
-        transcriptionText = "I've had a sore throat and a dry ticklish cough since yesterday.";
-        aiResponseText = "🎙️ *(Transcribed Audio)*:\n\"" + transcriptionText + "\"\n\n**Symptom Guidance:**\nA sudden sore throat and dry cough can be caused by viral irritation or allergies. \n\n**Suggested Relief:**\n• Sip warm water with honey or lemon.\n• Try saline gargles to reduce throat swelling.\n• Use a humidifier to keep airways moist.\n\nIf symptoms are accompanied by high fever or shortness of breath, please consult a practitioner immediately.";
+        docText = "Received your message. It sounds like you are recovering well. Just continue with the prescribed dosage.";
       } else {
         const query = textToSend.toLowerCase();
-        if (query.includes("headache") || query.includes("migraine")) {
-          aiResponseText = "🤕 **Headache Advisory**:\nA headache can arise from dehydration, tension, stress, or eye strain.\n\n**Self-Care steps:**\n1. Drink 1-2 large glasses of water immediately.\n2. Rest in a dark, quiet room.\n3. Apply a cold compress to your forehead.\n\n⚠️ **Warning**: Seek immediate emergency care if your headache is sudden and extremely severe (thunderclap), or is accompanied by confusion, stiff neck, fever, or vision issues.";
-        } else if (query.includes("fever") || query.includes("temperature")) {
-          aiResponseText = "🌡️ **Fever Management**:\nA fever is your immune system fighting off an infection.\n\n**Actionable advice:**\n• Rest completely and drink plenty of fluids (water, oral rehydration salts).\n• Wear lightweight clothing and keep the room cool.\n• You may take Paracetamol to reduce temperature.\n\n🚨 **Consult a doctor if:**\n- Temperature exceeds 39.4°C (103°F).\n- Fever persists for more than 3 consecutive days.\n- You experience difficulty breathing or a stiff neck.";
-        } else if (query.includes("chest pain") || query.includes("heart pain")) {
-          aiResponseText = "🚨 **CRITICAL WARNING**:\nChest pain can be an indicator of a cardiovascular emergency such as a heart attack.\n\n**Please check for these signs:**\n- Pressure, squeezing, or fullness in the center of the chest.\n- Pain radiating to the jaw, neck, back, or arms.\n- Shortness of breath, sweating, or lightheadedness.\n\nIf you are experiencing any of these symptoms, **please call emergency services immediately** or have someone drive you to the nearest emergency clinic.";
-        } else if (query.includes("amoxicillin") || query.includes("antibiotic")) {
-          aiResponseText = "💊 **Medication Information**:\nAmoxicillin is a common penicillin-type antibiotic used to treat bacterial infections.\n\n**Common Side Effects:**\n• Nausea, vomiting, or mild diarrhea.\n• Yeast infection or oral thrush.\n\n⚠️ **Important Instructions:**\n- Complete the full course of treatment even if you feel better.\n- Stop taking it immediately and seek emergency care if you experience allergy signs: skin hives, swelling of face/lips, or breathing difficulty.";
+        if (query.includes("pill") || query.includes("medicine") || query.includes("drug")) {
+          docText = "Make sure you take the medication strictly after meals as specified. Let me know if you experience any side effects.";
+        } else if (query.includes("pain") || query.includes("hurt")) {
+          docText = "Please monitor the intensity of the pain. If it worsens, we should reschedule for a physical exam at the clinic.";
         } else {
-          aiResponseText = "Thanks for sharing your symptoms. Based on my analysis, these symptoms can be managed with rest and hydration. \n\nHowever, to get a definitive diagnosis and treatment plan, I highly recommend scheduling a consultation with one of our certified specialists in the **Doctors** tab.";
+          docText = `Acknowledged. Continue with the guidelines we set, and let me know if you notice any changes.`;
         }
       }
 
-      const aiMsg: Message = {
+      const docMsg: Message = {
         id: `msg-${Date.now()}`,
-        sender: "ai",
-        text: aiResponseText,
-        transcription: transcriptionText || undefined,
+        sender: "doctor",
+        text: docText,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
 
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setMessages((prev) => [...prev, aiMsg]);
+      setMessages((prev) => [...prev, docMsg]);
       setIsTyping(false);
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
     }, 1500);
   };
 
-  const handleStarterPrompt = (prompt: typeof STARTER_PROMPTS[0]) => {
-    let mockAttach: any = undefined;
-    if (prompt.attachMockImage) {
-      mockAttach = { image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=300" };
-    } else if (prompt.attachMockFile) {
-      mockAttach = { file: { name: "Blood_Test_Report.pdf", size: "1.4 MB" } };
-    }
-    handleSend(prompt.query, mockAttach);
-  };
-
   // Simulators for attachments
   const handleAttachImage = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setAttachedImage("https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=300"); // Rash image mock
+    setAttachedImage("https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=300");
     setAttachedFile(null);
     setAttachedAudio(null);
     setShowAttachmentMenu(false);
@@ -185,7 +200,7 @@ export default function ChatScreen() {
 
   const handleAttachFile = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setAttachedFile({ name: "Lab_Report_072026.pdf", size: "1.4 MB" });
+    setAttachedFile({ name: "Lab_Result_Data.pdf", size: "850 KB" });
     setAttachedImage(null);
     setAttachedAudio(null);
     setShowAttachmentMenu(false);
@@ -199,52 +214,80 @@ export default function ChatScreen() {
   const handleStopRecording = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsRecording(false);
-    setAttachedAudio({ name: "Voice Note.mp3", duration: formatRecordingTime(recordingSeconds) });
+    setAttachedAudio({ name: "Voice Note.mp3", duration: formatTime(recordingSeconds) });
     setAttachedImage(null);
     setAttachedFile(null);
   };
 
-  const handleClearChat = () => {
-    Alert.alert("Clear Conversation", "Are you sure you want to clear all messages?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Clear",
-        style: "destructive",
-        onPress: () => {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setMessages([
-            {
-              id: "welcome",
-              sender: "ai",
-              text: "Hello! I am SmartDoctor AI, your virtual medical advisor. I can analyze symptoms, explain medical records, and answer health questions.\n\nFeel free to describe how you feel or attach lab reports, skin photos, or send voice messages.",
-              timestamp: "Just now",
-            },
-          ]);
-        },
-      },
-    ]);
+  // VOIP Call Launchers
+  const handleStartCall = (type: "audio" | "video") => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setCallType(type);
+    setCallStatus("ringing");
+    setIsMuted(false);
+    setIsSpeakerOn(false);
+    setIsCameraOn(true);
+
+    // Transition from Ringing to Connected after 3 seconds
+    callStatusTimeout.current = setTimeout(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setCallStatus("connected");
+    }, 3000);
+  };
+
+  const handleEndCall = () => {
+    if (callStatusTimeout.current) clearTimeout(callStatusTimeout.current);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setCallType(null);
+    setCallStatus(null);
   };
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      {/* Header */}
+      {/* Chat Header */}
       <View className="px-6 pt-2 pb-4 bg-white border-b border-slate-100 flex-row justify-between items-center">
-        <View className="flex-row items-center">
-          <View className="w-10 h-10 bg-blue-500 rounded-2xl items-center justify-center mr-3 relative">
-            <Ionicons name="chatbubble-ellipses" size={20} color="#FFFFFF" />
-            <View className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-white" />
+        <View className="flex-row items-center flex-1 pr-2">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-9 h-9 items-center justify-center rounded-full bg-slate-50 border border-slate-100 mr-2"
+          >
+            <Ionicons name="chevron-back" size={20} color="#1E293B" />
+          </TouchableOpacity>
+          
+          <View className="relative">
+            <Image
+              source={{ uri: doctor.image }}
+              style={{ width: 40, height: 40, borderRadius: 12 }}
+              contentFit="cover"
+            />
+            <View className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-white" />
           </View>
-          <View>
-            <Text className="text-base font-extrabold text-slate-900 leading-snug">SmartDoctor AI</Text>
-            <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Medical Assistant</Text>
+
+          <View className="ml-3 flex-1">
+            <Text className="text-sm font-bold text-slate-800 leading-snug" numberOfLines={1}>
+              {doctor.name}
+            </Text>
+            <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider" numberOfLines={1}>
+              {doctor.specialty}
+            </Text>
           </View>
         </View>
-        <TouchableOpacity
-          onPress={handleClearChat}
-          className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 items-center justify-center"
-        >
-          <Ionicons name="trash-outline" size={16} color="#64748B" />
-        </TouchableOpacity>
+
+        {/* Call Buttons */}
+        <View className="flex-row gap-2">
+          <TouchableOpacity
+            onPress={() => handleStartCall("audio")}
+            className="w-9 h-9 items-center justify-center rounded-full bg-slate-50 border border-slate-100"
+          >
+            <Ionicons name="call-outline" size={18} color="#1565C0" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleStartCall("video")}
+            className="w-9 h-9 items-center justify-center rounded-full bg-slate-50 border border-slate-100"
+          >
+            <Ionicons name="videocam-outline" size={18} color="#1565C0" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -252,7 +295,7 @@ export default function ChatScreen() {
         className="flex-1"
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        {/* Messages Scroll Area */}
+        {/* Messages List */}
         <ScrollView
           ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
@@ -267,15 +310,16 @@ export default function ChatScreen() {
                 key={msg.id}
                 className={`flex-row mb-5 ${isUser ? "justify-end" : "justify-start"}`}
               >
-                {/* AI Avatar */}
+                {/* Doctor Avatar */}
                 {!isUser && (
-                  <View className="w-8 h-8 bg-blue-500 rounded-xl items-center justify-center mr-2 mt-1 shadow-sm">
-                    <Ionicons name="chatbubble-ellipses" size={16} color="#FFFFFF" />
-                  </View>
+                  <Image
+                    source={{ uri: doctor.image }}
+                    style={{ width: 32, height: 32, borderRadius: 10, marginRight: 8, marginTop: 2 }}
+                    contentFit="cover"
+                  />
                 )}
 
                 <View className="max-w-[78%]">
-                  {/* Message Bubble Container */}
                   <View
                     className={`rounded-[24px] p-4 ${
                       isUser
@@ -307,7 +351,7 @@ export default function ChatScreen() {
                       </View>
                     )}
 
-                    {/* Render Audio voice attachment */}
+                    {/* Render Audio attachment */}
                     {msg.audioDuration && (
                       <View className={`flex-row items-center py-1.5 px-2 rounded-2xl mb-1 ${
                         isUser ? "bg-blue-600/40" : "bg-blue-50/50"
@@ -318,9 +362,8 @@ export default function ChatScreen() {
                           <Ionicons name="play" size={14} color="#FFFFFF" style={{ marginLeft: 2 }} />
                         </TouchableOpacity>
                         
-                        {/* Fake Waveform dots */}
                         <View className="flex-row items-center flex-1 mx-3 gap-0.5">
-                          {[2, 3, 5, 2, 4, 3, 5, 4, 2, 5, 3, 2, 4, 5, 3, 2].map((h, i) => (
+                          {[3, 2, 5, 3, 4, 3, 2, 4, 3, 5, 2, 3, 4, 2, 3, 4].map((h, i) => (
                             <View
                               key={i}
                               className={`w-0.5 rounded-full ${isUser ? "bg-white" : "bg-slate-300"}`}
@@ -358,41 +401,20 @@ export default function ChatScreen() {
             );
           })}
 
-          {/* AI Typing Loader Indicator */}
+          {/* Doctor Typing Loader */}
           {isTyping && (
             <View className="flex-row mb-5 justify-start">
-              <View className="w-8 h-8 bg-blue-500 rounded-xl items-center justify-center mr-2 mt-1 shadow-sm">
-                <Ionicons name="chatbubble-ellipses" size={16} color="#FFFFFF" />
-              </View>
+              <Image
+                source={{ uri: doctor.image }}
+                style={{ width: 32, height: 32, borderRadius: 10, marginRight: 8, marginTop: 2 }}
+                contentFit="cover"
+              />
               <View className="bg-white border border-slate-100 rounded-3xl rounded-tl-none p-4 shadow-sm shadow-slate-100/40">
                 <View className="flex-row items-center gap-1.5 py-1 px-2">
-                  <View className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <View className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <View className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <View className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" />
+                  <View className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+                  <View className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" />
                 </View>
-              </View>
-            </View>
-          )}
-
-          {/* Starter prompt shortcuts (Shown only when welcome message is the only one) */}
-          {messages.length === 1 && !isTyping && (
-            <View className="mt-8">
-              <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">Try asking</Text>
-              <View className="flex-row flex-wrap justify-between gap-3">
-                {STARTER_PROMPTS.map((prompt, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    onPress={() => handleStarterPrompt(prompt)}
-                    className="w-[48%] bg-white border border-slate-100 rounded-3xl p-4 shadow-sm shadow-slate-100/30 flex-row items-center"
-                  >
-                    <View className="w-8 h-8 bg-blue-50 rounded-xl items-center justify-center mr-3">
-                      <Ionicons name={prompt.icon as any} size={16} color="#1D4ED8" />
-                    </View>
-                    <Text className="text-xs font-bold text-slate-700 flex-1 leading-snug" numberOfLines={2}>
-                      {prompt.text}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
               </View>
             </View>
           )}
@@ -447,23 +469,21 @@ export default function ChatScreen() {
           </View>
         )}
 
-        {/* Input Bar Section */}
+        {/* Input Bar */}
         <View className="px-5 py-4 bg-white border-t border-slate-100 flex-row items-center gap-3">
           {isRecording ? (
-            /* Recording State Input Block */
             <View className="flex-1 bg-red-50/50 border border-red-100 rounded-full px-5 py-3 flex-row items-center justify-between">
               <View className="flex-row items-center">
                 <View className="w-2.5 h-2.5 bg-red-500 rounded-full mr-2" />
-                <Text className="text-xs text-red-600 font-bold">Recording {formatRecordingTime(recordingSeconds)}</Text>
+                <Text className="text-xs text-red-600 font-bold">Recording {formatTime(recordingSeconds)}</Text>
               </View>
               <TouchableOpacity onPress={handleStopRecording} className="px-3.5 py-1.5 bg-red-500 rounded-full">
                 <Text className="text-white text-[10px] font-bold uppercase tracking-wider">Done</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            /* Standard TextInput State Block */
             <>
-              {/* Attachment Plus button */}
+              {/* Attachment trigger */}
               <TouchableOpacity
                 onPress={() => setShowAttachmentMenu(!showAttachmentMenu)}
                 className={`w-11 h-11 items-center justify-center rounded-full border ${
@@ -477,10 +497,9 @@ export default function ChatScreen() {
                 />
               </TouchableOpacity>
 
-              {/* TextInput wrapper */}
               <View className="flex-1 bg-slate-100 px-5 py-3 rounded-full border border-slate-200/50 flex-row items-center">
                 <TextInput
-                  placeholder="Type health question..."
+                  placeholder={`Message ${doctor.name}...`}
                   placeholderTextColor="#94A3B8"
                   value={inputText}
                   onChangeText={setInputText}
@@ -492,7 +511,7 @@ export default function ChatScreen() {
             </>
           )}
 
-          {/* Action button (Send or Record) */}
+          {/* Action button */}
           {!isRecording && (
             <TouchableOpacity
               onPress={() => {
@@ -502,7 +521,7 @@ export default function ChatScreen() {
                   handleStartRecording();
                 }
               }}
-              className="w-11 h-11 bg-[#1D4ED8] rounded-full items-center justify-center shadow-md shadow-blue-500/20"
+              className="w-11 h-11 bg-[#1D4ED8] rounded-full items-center justify-center shadow-md"
             >
               <Ionicons
                 name={
@@ -532,7 +551,7 @@ export default function ChatScreen() {
               <View className="w-12 h-12 bg-red-100 rounded-2xl items-center justify-center mb-2 shadow-sm">
                 <Ionicons name="document-text" size={22} color="#EF4444" />
               </View>
-              <Text className="text-[10px] text-slate-600 font-bold">Lab Document</Text>
+              <Text className="text-[10px] text-slate-600 font-bold">Document</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleStartRecording} className="items-center">
@@ -544,8 +563,160 @@ export default function ChatScreen() {
           </View>
         )}
       </KeyboardAvoidingView>
+
+      {/* VOIP CALL MODAL OVERLAY */}
+      <Modal
+        visible={callType !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleEndCall}
+      >
+        {callType === "video" ? (
+          /* VIDEO CALL OVERLAY */
+          <View className="flex-1 bg-slate-900 justify-between py-16 px-6 relative">
+            {callStatus === "ringing" ? (
+              /* Video Ringing layout */
+              <View className="flex-1 items-center justify-center">
+                <Image
+                  source={{ uri: doctor.image }}
+                  style={{ width: 120, height: 120, borderRadius: 30 }}
+                  contentFit="cover"
+                  className="border-2 border-white/20 mb-6"
+                />
+                <Text className="text-xl font-bold text-white mb-2">{doctor.name}</Text>
+                <Text className="text-xs text-blue-300 font-bold uppercase tracking-wider mb-8">Video Consultation Call</Text>
+                <Text className="text-sm text-slate-400 font-medium animate-pulse">Ringing...</Text>
+              </View>
+            ) : (
+              /* Video Connected layout */
+              <View className="flex-1 relative">
+                {/* Full-screen Remote Video View (Mock) */}
+                <View className="absolute inset-0 bg-slate-800 rounded-[32px] overflow-hidden items-center justify-center">
+                  <Image
+                    source={{ uri: doctor.image }}
+                    style={{ width: "100%", height: "100%", opacity: isCameraOn ? 0.95 : 0.3 }}
+                    contentFit="cover"
+                  />
+                  {!isCameraOn && (
+                    <View className="absolute items-center">
+                      <Ionicons name="videocam-off" size={48} color="#94A3B8" className="mb-2" />
+                      <Text className="text-slate-400 text-xs font-bold">Doctor's camera is off</Text>
+                    </View>
+                  )}
+                  {/* Call Timer Overlay */}
+                  <View className="absolute top-6 left-6 bg-black/40 px-3 py-1.5 rounded-full flex-row items-center border border-white/10">
+                    <View className="w-2 h-2 bg-red-500 rounded-full mr-2" />
+                    <Text className="text-white text-xs font-bold">{formatTime(callSeconds)}</Text>
+                  </View>
+                </View>
+
+                {/* Local Camera Picture-in-Picture Preview */}
+                <View 
+                  className="absolute bottom-24 right-4 w-28 h-40 bg-slate-700 rounded-2xl overflow-hidden border border-white/20 shadow-2xl"
+                  style={{ elevation: 15 }}
+                >
+                  <Image
+                    source={{ uri: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150" }}
+                    style={{ width: "100%", height: "100%" }}
+                    contentFit="cover"
+                  />
+                  <View className="absolute bottom-2 left-2 bg-black/40 px-1.5 py-0.5 rounded-md">
+                    <Text className="text-white text-[8px] font-bold">You</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Calling control panel */}
+            <View className="flex-row justify-around items-center w-full px-6 absolute bottom-10 left-6 right-6">
+              <TouchableOpacity
+                onPress={() => setIsMuted(!isMuted)}
+                className={`w-14 h-14 rounded-full items-center justify-center border ${
+                  isMuted ? "bg-white border-white" : "bg-white/10 border-white/20"
+                }`}
+              >
+                <Ionicons name={isMuted ? "mic-off" : "mic"} size={22} color={isMuted ? "#1E293B" : "#FFFFFF"} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={handleEndCall}
+                className="w-16 h-16 bg-red-500 rounded-full items-center justify-center shadow-lg"
+              >
+                <Ionicons name="call" size={26} color="#FFFFFF" style={{ transform: [{ rotate: "135deg" }] }} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setIsCameraOn(!isCameraOn)}
+                className={`w-14 h-14 rounded-full items-center justify-center border ${
+                  !isCameraOn ? "bg-white border-white" : "bg-white/10 border-white/20"
+                }`}
+              >
+                <Ionicons name={isCameraOn ? "videocam" : "videocam-off"} size={22} color={isCameraOn ? "#FFFFFF" : "#1E293B"} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          /* AUDIO VOICE CALL OVERLAY */
+          <View style={styles.modalOverlay} className="bg-slate-900 flex-1 justify-between py-20 px-6">
+            <View className="items-center mt-10">
+              <Image
+                source={{ uri: doctor.image }}
+                style={{ width: 120, height: 120, borderRadius: 60 }}
+                contentFit="cover"
+                className="border-4 border-white/10 mb-6 shadow-2xl"
+              />
+              <Text className="text-xl font-bold text-white mb-2">{doctor.name}</Text>
+              <Text className="text-xs text-blue-300 font-bold uppercase tracking-wider">Audio Consultation Call</Text>
+            </View>
+
+            <View className="items-center justify-center">
+              {callStatus === "ringing" ? (
+                <Text className="text-sm text-slate-400 font-medium animate-pulse">Ringing...</Text>
+              ) : (
+                <View className="items-center">
+                  <Text className="text-2xl font-bold text-white mb-1">{formatTime(callSeconds)}</Text>
+                  <Text className="text-[10px] text-green-400 font-bold uppercase tracking-wide">Connected</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Audio call controls */}
+            <View className="flex-row justify-around items-center w-full px-6 mb-4">
+              <TouchableOpacity
+                onPress={() => setIsMuted(!isMuted)}
+                className={`w-14 h-14 rounded-full items-center justify-center border ${
+                  isMuted ? "bg-white border-white" : "bg-white/10 border-white/20"
+                }`}
+              >
+                <Ionicons name={isMuted ? "mic-off" : "mic"} size={22} color={isMuted ? "#1E293B" : "#FFFFFF"} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleEndCall}
+                className="w-16 h-16 bg-red-500 rounded-full items-center justify-center shadow-lg"
+              >
+                <Ionicons name="call" size={26} color="#FFFFFF" style={{ transform: [{ rotate: "135deg" }] }} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setIsSpeakerOn(!isSpeakerOn)}
+                className={`w-14 h-14 rounded-full items-center justify-center border ${
+                  isSpeakerOn ? "bg-white border-white" : "bg-white/10 border-white/20"
+                }`}
+              >
+                <Ionicons name={isSpeakerOn ? "volume-high" : "volume-medium"} size={22} color={isSpeakerOn ? "#1E293B" : "#FFFFFF"} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </Modal>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "#0F172A",
+  },
+});

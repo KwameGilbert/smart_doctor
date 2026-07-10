@@ -511,7 +511,7 @@ export default function AppointmentsScreen() {
                   <TouchableOpacity
                     onPress={() => {
                       if (apt.type === "Online Call") {
-                        router.push("/(tabs)/chat");
+                        router.push(`/doctor-chat/${apt.doctor.id}` as any);
                       } else {
                         Alert.alert("Clinic Location", "Please visit the clinic location for your physical checkup.");
                       }

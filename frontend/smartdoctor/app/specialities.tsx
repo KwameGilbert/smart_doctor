@@ -91,6 +91,7 @@ export default function SpecialitiesScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               activeOpacity={0.9}
+              onPress={() => router.push({ pathname: "/(tabs)/doctors", params: { specialty: item.name } })}
               className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm items-center mb-4"
               style={{ width: "48%" }}
             >

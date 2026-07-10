@@ -47,6 +47,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="doctors"
+        options={{
+          title: "Doctors",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "people" : "people-outline"}
+              size={22}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="appointments"
         options={{
           title: "Book",
@@ -70,19 +83,6 @@ export default function TabLayout() {
                   ? "chatbubble-ellipses"
                   : "chatbubble-ellipses-outline"
               }
-              size={22}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="records"
-        options={{
-          title: "Records",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "folder" : "folder-outline"}
               size={22}
               color={color}
             />
