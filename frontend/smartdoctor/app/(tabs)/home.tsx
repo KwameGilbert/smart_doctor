@@ -18,6 +18,7 @@ import { router } from "expo-router";
 import { Image } from "expo-image";
 import SearchDiscover from "../../components/SearchDiscover";
 import { PullToRefresh } from "../../components/ui/PullToRefresh";
+import Animated, { FadeInUp, FadeOutUp, FadeInLeft, FadeOutLeft, Layout } from "react-native-reanimated";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -58,20 +59,10 @@ export default function HomeScreen() {
   }, []);
 
   const handleSearchFocus = () => {
-    LayoutAnimation.configureNext({
-      duration: 160,
-      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-      update: { type: LayoutAnimation.Types.easeInEaseOut }
-    });
     setIsSearchFocused(true);
   };
 
   const handleCancelSearch = () => {
-    LayoutAnimation.configureNext({
-      duration: 140,
-      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-      update: { type: LayoutAnimation.Types.easeInEaseOut }
-    });
     setIsSearchFocused(false);
     setSearchQuery("");
     Keyboard.dismiss();
@@ -110,7 +101,11 @@ export default function HomeScreen() {
         >
           {/* User Header (Hidden when search has focus) */}
           {!isSearchFocused && (
-            <View className="flex-row justify-between items-center mb-8">
+            <Animated.View
+              entering={FadeInUp.duration(160)}
+              exiting={FadeOutUp.duration(160)}
+              className="flex-row justify-between items-center mb-8"
+            >
               <View className="flex-row items-center flex-1 pr-2">
                 <Image
                   source={{ uri: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150" }}
@@ -150,19 +145,21 @@ export default function HomeScreen() {
                   </View>
                 </TouchableOpacity>
               </View>
-            </View>
+            </Animated.View>
           )}
 
           {/* Search Bar Wrapper */}
-          <View className="flex-row items-center mb-2">
+          <Animated.View layout={Layout.springify().damping(18)} className="flex-row items-center mb-2">
             {isSearchFocused && (
-              <TouchableOpacity
-                onPress={handleCancelSearch}
-                className="mr-3 w-10 h-10 items-center justify-center rounded-full bg-slate-100 border border-slate-200/50"
-                style={{ marginRight: 12 }}
-              >
-                <Ionicons name="chevron-back" size={22} color="#1E293B" />
-              </TouchableOpacity>
+              <Animated.View entering={FadeInLeft.duration(150)} exiting={FadeOutLeft.duration(150)}>
+                <TouchableOpacity
+                  onPress={handleCancelSearch}
+                  className="mr-3 w-10 h-10 items-center justify-center rounded-full bg-slate-100 border border-slate-200/50"
+                  style={{ marginRight: 12 }}
+                >
+                  <Ionicons name="chevron-back" size={22} color="#1E293B" />
+                </TouchableOpacity>
+              </Animated.View>
             )}
 
             <View className="flex-1 flex-row items-center bg-slate-100 px-5 py-3 rounded-full border border-slate-200/50">
@@ -183,11 +180,11 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               )}
             </View>
-          </View>
+          </Animated.View>
 
           {isSearchFocused ? (
             /* SEARCH CONTEXT STATE */
-            <View className="flex-1">
+            <Animated.View layout={Layout.springify().damping(18)} className="flex-1">
               {searchQuery.length > 0 ? (
                 /* Search Results Panel */
                 <View className="mb-8">
@@ -243,10 +240,10 @@ export default function HomeScreen() {
                 /* Discover Screen (Reusable Component) */
                 <SearchDiscover onSelectQuery={handleSelectQuery} />
               )}
-            </View>
+            </Animated.View>
           ) : (
             /* DEFAULT DASHBOARD VIEW */
-            <View className="flex-1">
+            <Animated.View layout={Layout.springify().damping(18)} className="flex-1">
               {/* Top Doctors */}
               <View className="mb-6">
                 <Text className="text-lg font-bold text-slate-900 mb-4">Top Doctors</Text>
@@ -353,7 +350,7 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
-            </View>
+            </Animated.View>
           )}
         </PullToRefresh>
       </KeyboardAvoidingView>
