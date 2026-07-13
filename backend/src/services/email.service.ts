@@ -43,6 +43,6 @@ export const sendEmail = async (to: string, subject: string, html: string, text?
     return true;
   } catch (error: any) {
     console.error("❌ Failed to send email:", error.message || error);
-    throw new Error("Email sending failed");
+    return false;
   }
 };
