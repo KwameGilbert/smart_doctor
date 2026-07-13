@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { ALL_DOCTORS, SPECIALTIES } from "../../constants/data";
+import { useColorScheme } from "nativewind";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -25,6 +26,8 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 type SortOption = "None" | "Rating" | "Experience" | "Patients";
 
 export default function DoctorsScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const params = useLocalSearchParams();
   const routeSpecialty = params.specialty as string;
 
@@ -110,28 +113,28 @@ export default function DoctorsScreen() {
   const hasActiveFilters = minRating !== null || minExperience !== null || sortBy !== "None";
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark" edges={["top"]}>
       {/* Header */}
-      <View className="px-6 pt-4 pb-3 bg-white border-b border-slate-100 flex-row justify-between items-center">
-        <Text className="text-xl font-bold text-slate-900">Our Doctors</Text>
+      <View className="px-6 pt-4 pb-3 bg-surface dark:bg-surface-dark border-b border-border-color dark:border-border-color-dark flex-row justify-between items-center">
+        <Text className="text-xl font-bold text-text-main dark:text-text-main-dark">Our Doctors</Text>
         <TouchableOpacity
           onPress={handleResetFilters}
-          className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 items-center justify-center"
+          className="w-8 h-8 rounded-full bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark items-center justify-center"
         >
-          <Ionicons name="refresh" size={16} color="#64748B" />
+          <Ionicons name="refresh" size={16} color={isDark ? "#94A3B8" : "#64748B"} />
         </TouchableOpacity>
       </View>
 
       {/* Search and Filters Button */}
-      <View className="bg-white px-6 py-2 border-b border-slate-100 flex-row gap-3">
-        <View className="flex-1 flex-row items-center bg-slate-100 px-5 py-3 rounded-full border border-slate-200/50">
+      <View className="bg-surface dark:bg-surface-dark px-6 py-2 border-b border-border-color dark:border-border-color-dark flex-row gap-3">
+        <View className="flex-1 flex-row items-center bg-slate-100 dark:bg-slate-800 px-5 py-3 rounded-full border border-border-color dark:border-border-color-dark">
           <Ionicons name="search-outline" size={20} color="#94A3B8" style={{ marginRight: 8 }} />
           <TextInput
             placeholder="Search doctors, credentials..."
             placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            className="flex-1 text-slate-800 text-sm font-medium"
+            className="flex-1 text-text-main dark:text-text-main-dark text-sm font-medium"
             style={{ padding: 0 }}
           />
           {searchQuery.length > 0 && (
@@ -142,9 +145,9 @@ export default function DoctorsScreen() {
         </View>
         <TouchableOpacity
           onPress={() => setIsFilterModalOpen(true)}
-          className="w-11 h-11 bg-slate-100 border border-slate-200/50 rounded-full items-center justify-center relative"
+          className="w-11 h-11 bg-slate-100 dark:bg-slate-800 border border-border-color dark:border-border-color-dark rounded-full items-center justify-center relative"
         >
-          <Ionicons name="options-outline" size={20} color="#1E293B" />
+          <Ionicons name="options-outline" size={20} color={isDark ? "#F8FAFC" : "#1E293B"} />
           {hasActiveFilters && (
             <View className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
           )}
@@ -164,11 +167,11 @@ export default function DoctorsScreen() {
               onPress={() => handleSelectSpecialty("All")}
               className={`px-5 py-2.5 rounded-full border ${
                 selectedSpecialty === "All"
-                  ? "bg-[#1565C0] border-[#1565C0]"
-                  : "bg-white border-slate-200"
+                  ? "bg-primary border-primary"
+                  : "bg-surface dark:bg-surface-dark border-border-color dark:border-border-color-dark"
               }`}
             >
-              <Text className={`text-xs font-bold ${selectedSpecialty === "All" ? "text-white" : "text-slate-700"}`}>
+              <Text className={`text-xs font-bold ${selectedSpecialty === "All" ? "text-white" : "text-text-muted dark:text-text-muted-dark"}`}>
                 All Specialities
               </Text>
             </TouchableOpacity>
@@ -180,8 +183,8 @@ export default function DoctorsScreen() {
                   onPress={() => handleSelectSpecialty(spec.name)}
                   className={`px-5 py-2.5 rounded-full border flex-row items-center ${
                     isSelected
-                      ? "bg-[#1565C0] border-[#1565C0]"
-                      : "bg-white border-slate-200"
+                      ? "bg-primary border-primary"
+                      : "bg-surface dark:bg-surface-dark border-border-color dark:border-border-color-dark"
                   }`}
                 >
                   <Ionicons
@@ -190,7 +193,7 @@ export default function DoctorsScreen() {
                     color={isSelected ? "#FFFFFF" : spec.color}
                     style={{ marginRight: 6 }}
                   />
-                  <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-slate-700"}`}>
+                  <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-text-muted dark:text-text-muted-dark"}`}>
                     {spec.name}
                   </Text>
                 </TouchableOpacity>
@@ -202,23 +205,23 @@ export default function DoctorsScreen() {
         {/* Applied Filters Info Badge */}
         {hasActiveFilters && (
           <View className="px-6 mb-2 flex-row flex-wrap gap-2 items-center">
-            <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mr-1">Applied:</Text>
+            <Text className="text-[10px] text-text-light dark:text-text-light-dark font-bold uppercase tracking-wider mr-1">Applied:</Text>
             {minRating && (
-              <View className="bg-amber-50 border border-amber-100 px-3 py-1 rounded-full flex-row items-center">
+              <View className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 px-3 py-1 rounded-full flex-row items-center">
                 <Ionicons name="star" size={10} color="#FBBF24" style={{ marginRight: 3 }} />
-                <Text className="text-[10px] text-amber-800 font-bold">{minRating}+ Rating</Text>
+                <Text className="text-[10px] text-amber-800 dark:text-amber-300 font-bold">{minRating}+ Rating</Text>
               </View>
             )}
             {minExperience && (
-              <View className="bg-blue-50 border border-blue-100 px-3 py-1 rounded-full flex-row items-center">
+              <View className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 px-3 py-1 rounded-full flex-row items-center">
                 <Ionicons name="briefcase" size={10} color="#1D4ED8" style={{ marginRight: 3 }} />
-                <Text className="text-[10px] text-blue-800 font-bold">{minExperience}+ Yrs Exp</Text>
+                <Text className="text-[10px] text-blue-800 dark:text-blue-300 font-bold">{minExperience}+ Yrs Exp</Text>
               </View>
             )}
             {sortBy !== "None" && (
-              <View className="bg-purple-50 border border-purple-100 px-3 py-1 rounded-full flex-row items-center">
+              <View className="bg-purple-50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/50 px-3 py-1 rounded-full flex-row items-center">
                 <Ionicons name="funnel" size={10} color="#8B5CF6" style={{ marginRight: 3 }} />
-                <Text className="text-[10px] text-purple-800 font-bold">Sort: {sortBy}</Text>
+                <Text className="text-[10px] text-purple-800 dark:text-purple-300 font-bold">Sort: {sortBy}</Text>
               </View>
             )}
           </View>
@@ -227,14 +230,14 @@ export default function DoctorsScreen() {
         {/* List of Doctors */}
         <View className="px-6 pb-20 mt-2">
           {filteredDoctors.length === 0 ? (
-            <View className="items-center justify-center py-20 bg-white border border-slate-100 rounded-3xl p-8">
-              <View className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl items-center justify-center mb-4">
+            <View className="items-center justify-center py-20 bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-8">
+              <View className="w-16 h-16 bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark rounded-2xl items-center justify-center mb-4">
                 <Ionicons name="search-outline" size={32} color="#94A3B8" />
               </View>
-              <Text className="text-base font-bold text-slate-800 text-center">
+              <Text className="text-base font-bold text-text-main dark:text-text-main-dark text-center">
                 No doctors found
               </Text>
-              <Text className="text-xs text-slate-400 mt-1 text-center px-4 leading-relaxed mb-6">
+              <Text className="text-xs text-text-muted dark:text-text-muted-dark mt-1 text-center px-4 leading-relaxed mb-6">
                 Try refining your keywords or resetting filters to find matching doctors.
               </Text>
               <TouchableOpacity
