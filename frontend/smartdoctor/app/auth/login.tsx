@@ -68,10 +68,9 @@ export default function LoginScreen() {
             {
               text: "Verify Now",
               onPress: () => {
-                // If there's an OTP verification screen, route there.
-                // We'll pass the emailOrPhone so the verification screen can use it.
                 router.push({
-                  pathname: "/auth/signup", // Signup page might contain registration, but if there's no verification page we can route to signup, or stay on login
+                  pathname: "/auth/verify",
+                  params: { email: emailOrPhone.trim() },
                 });
               },
             },
