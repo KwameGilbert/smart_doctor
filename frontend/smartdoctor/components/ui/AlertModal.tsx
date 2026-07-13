@@ -91,19 +91,24 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setButtons(resolvedButtons);
     setType(resolvedType);
+    
+    // Reset animations
+    scaleValue.setValue(0.85);
+    opacityValue.setValue(0);
+    
     setVisible(true);
 
     // Animate in
     Animated.parallel([
       Animated.spring(scaleValue, {
         toValue: 1,
-        tension: 50,
-        friction: 8,
+        tension: 70,
+        friction: 9,
         useNativeDriver: true,
       }),
       Animated.timing(opacityValue, {
         toValue: 1,
-        duration: 180,
+        duration: 200,
         useNativeDriver: true,
       }),
     ]).start();
@@ -112,13 +117,13 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const hideAlert = () => {
     Animated.parallel([
       Animated.timing(scaleValue, {
-        toValue: 0.9,
-        duration: 120,
+        toValue: 0.85,
+        duration: 150,
         useNativeDriver: true,
       }),
       Animated.timing(opacityValue, {
         toValue: 0,
-        duration: 120,
+        duration: 150,
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -148,12 +153,14 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         animationType="none"
         onRequestClose={hideAlert}
       >
-        <View style={styles.overlay} className="bg-slate-900/60 dark:bg-black/80">
+        <Animated.View
+          style={[styles.overlay, { opacity: opacityValue }]}
+          className="bg-slate-900/60 dark:bg-black/80"
+        >
           <Animated.View
             style={[
               styles.alertContainer,
               {
-                opacity: opacityValue,
                 transform: [{ scale: scaleValue }],
               },
             ]}
@@ -215,7 +222,7 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               })}
             </View>
           </Animated.View>
-        </View>
+        </Animated.View>
       </Modal>
     </AlertContext.Provider>
   );
