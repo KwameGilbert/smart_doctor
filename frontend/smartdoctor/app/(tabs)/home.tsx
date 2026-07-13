@@ -11,6 +11,7 @@ import {
   StyleSheet,
   LayoutAnimation,
   UIManager,
+  BackHandler,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -89,6 +90,17 @@ export default function HomeScreen() {
     fetchDashboardData();
     const randomPhrase = HEALTH_PHRASES[Math.floor(Math.random() * HEALTH_PHRASES.length)];
     setPhrase(randomPhrase);
+
+    const backAction = () => {
+      // Exit app directly from Home screen instead of going back to auth screens
+      BackHandler.exitApp();
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+    return () => backHandler.remove();
   }, []);
 
   const handleSearchFocus = () => {
