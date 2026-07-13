@@ -293,7 +293,7 @@ export default function HomeScreen() {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{ gap: 16 }}
                 >
-                  {TOP_DOCTORS.map((doc) => (
+                  {topDoctors.map((doc) => (
                     <TouchableOpacity
                       key={doc.id}
                       onPress={() => router.push(`/doctor/${doc.id}`)}
@@ -333,7 +333,7 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
                 <View className="flex-row justify-between">
-                  {SPECIALTIES.map((spec) => (
+                  {mappedSpecialties.map((spec) => (
                     <TouchableOpacity
                       key={spec.id}
                       onPress={() => router.push({ pathname: "/(tabs)/doctors", params: { specialty: spec.name } })}
@@ -357,7 +357,7 @@ export default function HomeScreen() {
               {/* Other Doctors */}
               <View className="mb-8">
                 <Text className="text-lg font-bold text-slate-900 mb-4">Other Doctors</Text>
-                {OTHER_DOCTORS.map((doc) => (
+                {otherDoctors.map((doc) => (
                   <TouchableOpacity
                     key={doc.id}
                     onPress={() => router.push(`/doctor/${doc.id}`)}
