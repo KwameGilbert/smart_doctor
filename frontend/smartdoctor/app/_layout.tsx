@@ -14,7 +14,17 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
+import { ThemeProvider, DefaultTheme } from "@react-navigation/native";
 import AnimatedSplash from "../components/AnimatedSplash";
+
+// Define custom theme variables for the app navigation container
+const AppTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: "#F0F7FF", // light blue background
+  },
+};
 
 // Prevent the native OS splash from auto-hiding before we're ready
 SplashScreen.preventAutoHideAsync();
@@ -52,12 +62,14 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={{ flex: 1 }} onLayout={onRootViewLayout}>
-      <Stack screenOptions={{ headerShown: false }} />
+    <ThemeProvider value={AppTheme}>
+      <View style={{ flex: 1 }} onLayout={onRootViewLayout}>
+        <Stack screenOptions={{ headerShown: false }} />
 
-      {showAnimatedSplash && (
-        <AnimatedSplash onFinished={() => setShowAnimatedSplash(false)} />
-      )}
-    </View>
+        {showAnimatedSplash && (
+          <AnimatedSplash onFinished={() => setShowAnimatedSplash(false)} />
+        )}
+      </View>
+    </ThemeProvider>
   );
 }
