@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -9,8 +9,10 @@ import AuthPattern from "../../components/AuthPattern";
 import { authApi } from "../../services/api/auth";
 import { tokenStorage } from "../../services/api/storage";
 import { useColorScheme } from "nativewind";
+import { useAlert } from "../../components/ui/AlertModal";
 
 export default function VerifyScreen() {
+  const { showAlert } = useAlert();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const params = useLocalSearchParams();
@@ -57,19 +59,19 @@ export default function VerifyScreen() {
       if (response.status === "success" && response.data?.token) {
         // Save token and navigate home
         await tokenStorage.saveToken(response.data.token);
-        Alert.alert("Success", "Account verified successfully!", [
+        showAlert("Success", "Account verified successfully!", [
           {
             text: "OK",
             onPress: () => router.replace("/home"),
           },
         ]);
       } else {
-        Alert.alert("Verification Failed", response.message || "Invalid verification code.");
+        showAlert("Verification Failed", response.message || "Invalid verification code.");
       }
     } catch (error: any) {
       console.error("Verification error:", error);
       const serverMessage = error.response?.data?.message || "Invalid verification code. Please check and try again.";
-      Alert.alert("Verification Error", serverMessage);
+      showAlert("Verification Error", serverMessage);
     } finally {
       setLoading(false);
     }
@@ -87,14 +89,14 @@ export default function VerifyScreen() {
     try {
       const response = await authApi.resendOtp(emailOrPhone.trim());
       if (response.status === "success") {
-        Alert.alert("OTP Resent", "A new verification code has been sent to your email/phone.");
+        showAlert("OTP Resent", "A new verification code has been sent to your email/phone.");
       } else {
-        Alert.alert("Error", response.message || "Failed to resend verification code.");
+        showAlert("Error", response.message || "Failed to resend verification code.");
       }
     } catch (error: any) {
       console.error("Resend OTP error:", error);
       const serverMessage = error.response?.data?.message || "Failed to resend code. Please try again later.";
-      Alert.alert("Error", serverMessage);
+      showAlert("Error", serverMessage);
     } finally {
       setResending(false);
     }

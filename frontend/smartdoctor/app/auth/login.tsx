@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -8,8 +8,10 @@ import Button from "../../components/ui/Button";
 import AuthPattern from "../../components/AuthPattern";
 import { authApi } from "../../services/api/auth";
 import { tokenStorage } from "../../services/api/storage";
+import { useAlert } from "../../components/ui/AlertModal";
 
 export default function LoginScreen() {
+  const { showAlert } = useAlert();
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,7 +59,7 @@ export default function LoginScreen() {
         // Redirect to main home dashboard
         router.replace("/home");
       } else if (response.data && response.data.isVerified === false) {
-        Alert.alert(
+        showAlert(
           "Verification Required",
           "Your account is registered but not yet verified. Please verify using the OTP code sent to you.",
           [
@@ -77,12 +79,12 @@ export default function LoginScreen() {
           ]
         );
       } else {
-        Alert.alert("Login Failed", response.message || "Invalid email or password.");
+        showAlert("Login Failed", response.message || "Invalid email or password.");
       }
     } catch (error: any) {
       console.error("Login request error:", error);
       const serverMessage = error.response?.data?.message || "Something went wrong. Please check your connection.";
-      Alert.alert("Login Error", serverMessage);
+      showAlert("Login Error", serverMessage);
     } finally {
       setLoading(false);
     }
