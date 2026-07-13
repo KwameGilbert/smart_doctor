@@ -94,3 +94,16 @@ export const deleteNotification = async (req: Request, res: Response, next: Next
     next(err);
   }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /notifications
+// ─────────────────────────────────────────────────────────────────────────────
+export const clearAllNotifications = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    await db("notifications").where({ userId }).del();
+    return sendNoContent(res);
+  } catch (err) {
+    next(err);
+  }
+};

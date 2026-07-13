@@ -7,6 +7,7 @@ const router = Router();
 router.get("/", authenticate, notifCtrl.listMyNotifications);
 router.patch("/read-all", authenticate, notifCtrl.markAllAsRead);
 router.patch("/:id/read", authenticate, notifCtrl.markAsRead);
+router.delete("/", authenticate, notifCtrl.clearAllNotifications);
 router.delete("/:id", authenticate, notifCtrl.deleteNotification);
 
 export default router;
