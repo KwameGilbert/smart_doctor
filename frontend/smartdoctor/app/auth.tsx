@@ -1,12 +1,22 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Button from "../components/ui/Button";
 import AuthGridBackground from "../components/AuthGridBackground";
+import { tokenStorage } from "../services/api/storage";
 
 export default function AuthWelcomeScreen() {
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await tokenStorage.getToken();
+      if (token) {
+        router.replace("/home");
+      }
+    };
+    checkToken();
+  }, []);
   return (
     <View style={styles.mainContainer}>
       {/* Dynamic Scrolling Grid Background */}

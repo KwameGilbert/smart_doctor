@@ -26,6 +26,16 @@ export default function VerifyScreen() {
   const [errors, setErrors] = useState<{ emailOrPhone?: string; code?: string }>({});
 
   useEffect(() => {
+    const checkToken = async () => {
+      const token = await tokenStorage.getToken();
+      if (token) {
+        router.replace("/home");
+      }
+    };
+    checkToken();
+  }, []);
+
+  useEffect(() => {
     if (emailParam) {
       setEmailOrPhone(emailParam);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,6 +9,7 @@ import AuthPattern from "../../components/AuthPattern";
 import { authApi } from "../../services/api/auth";
 import { useAlert } from "../../components/ui/AlertModal";
 import KeyboardSafeView from "../../components/ui/KeyboardSafeView";
+import { tokenStorage } from "../../services/api/storage";
 
 export default function SignupScreen() {
   const { showAlert } = useAlert();
@@ -18,6 +19,16 @@ export default function SignupScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await tokenStorage.getToken();
+      if (token) {
+        router.replace("/home");
+      }
+    };
+    checkToken();
+  }, []);
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;

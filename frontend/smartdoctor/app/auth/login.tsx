@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +16,16 @@ export default function LoginScreen() {
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await tokenStorage.getToken();
+      if (token) {
+        router.replace("/home");
+      }
+    };
+    checkToken();
+  }, []);
   const [errors, setErrors] = useState<{ emailOrPhone?: string; password?: string }>(
     {},
   );
