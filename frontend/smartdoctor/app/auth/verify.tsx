@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -105,80 +105,85 @@ export default function VerifyScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark relative" edges={["top", "bottom"]}>
       <AuthPattern />
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        {/* Header */}
-        <View className="flex-row items-center px-6 py-4">
-          <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-            <Ionicons name="chevron-back" size={24} color={isDark ? "#F8FAFC" : "#1E293B"} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Content */}
-        <View className="flex-1 px-8 pt-4 justify-between pb-8">
-          <View>
-            <Text className="text-3xl font-bold text-text-main dark:text-text-main-dark mb-2">
-              Verify Account
-            </Text>
-            <Text className="text-base text-text-muted dark:text-text-muted-dark mb-8">
-              Enter the verification code sent to your email or phone number.
-            </Text>
-
-            {/* Form */}
-            <Input
-              label="Email or Phone Number"
-              placeholder="name@example.com or +123456789"
-              value={emailOrPhone}
-              onChangeText={setEmailOrPhone}
-              keyboardType="default"
-              autoCapitalize="none"
-              leftIconName="person-outline"
-              error={errors.emailOrPhone}
-            />
-
-            <Input
-              label="Verification Code"
-              placeholder="Enter OTP code"
-              value={code}
-              onChangeText={setCode}
-              keyboardType="number-pad"
-              autoCapitalize="none"
-              leftIconName="key-outline"
-              error={errors.code}
-            />
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View className="flex-row items-center px-6 py-4">
+            <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
+              <Ionicons name="chevron-back" size={24} color={isDark ? "#F8FAFC" : "#1E293B"} />
+            </TouchableOpacity>
           </View>
 
-          {/* Bottom actions */}
-          <View className="mt-8">
-            <Button
-              title="Verify Code"
-              loading={loading}
-              onPress={handleVerify}
-              className="mb-4"
-            />
-
-            <Button
-              title="Resend Code"
-              variant="secondary"
-              loading={resending}
-              onPress={handleResend}
-              className="mb-6"
-            />
-
-            {/* Footer */}
-            <View className="flex-row justify-center items-center">
-              <Text className="text-text-muted dark:text-text-muted-dark text-sm">
-                Want to try signing in instead?{" "}
+          {/* Content */}
+          <View className="flex-1 px-8 pt-4 justify-between pb-8">
+            <View>
+              <Text className="text-3xl font-bold text-text-main dark:text-text-main-dark mb-2">
+                Verify Account
               </Text>
-              <TouchableOpacity onPress={() => router.push("/auth/login")}>
-                <Text className="text-primary font-bold text-sm">Log In</Text>
-              </TouchableOpacity>
+              <Text className="text-base text-text-muted dark:text-text-muted-dark mb-8">
+                Enter the verification code sent to your email or phone number.
+              </Text>
+
+              {/* Form */}
+              <Input
+                label="Email or Phone Number"
+                placeholder="name@example.com or +123456789"
+                value={emailOrPhone}
+                onChangeText={setEmailOrPhone}
+                keyboardType="default"
+                autoCapitalize="none"
+                leftIconName="person-outline"
+                error={errors.emailOrPhone}
+              />
+
+              <Input
+                label="Verification Code"
+                placeholder="Enter OTP code"
+                value={code}
+                onChangeText={setCode}
+                keyboardType="number-pad"
+                autoCapitalize="none"
+                leftIconName="key-outline"
+                error={errors.code}
+              />
+            </View>
+
+            {/* Bottom actions */}
+            <View className="mt-8">
+              <Button
+                title="Verify Code"
+                loading={loading}
+                onPress={handleVerify}
+                className="mb-4"
+              />
+
+              <Button
+                title="Resend Code"
+                variant="secondary"
+                loading={resending}
+                onPress={handleResend}
+                className="mb-6"
+              />
+
+              {/* Footer */}
+              <View className="flex-row justify-center items-center">
+                <Text className="text-text-muted dark:text-text-muted-dark text-sm">
+                  Want to try signing in instead?{" "}
+                </Text>
+                <TouchableOpacity onPress={() => router.push("/auth/login")}>
+                  <Text className="text-primary font-bold text-sm">Log In</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
