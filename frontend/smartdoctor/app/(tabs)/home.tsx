@@ -21,6 +21,7 @@ import { PullToRefresh } from "../../components/ui/PullToRefresh";
 import Animated, { FadeInUp, FadeOutUp, FadeInLeft, FadeOutLeft, Layout } from "react-native-reanimated";
 import { TOP_DOCTORS, OTHER_DOCTORS, SPECIALTIES } from "../../constants/data";
 import { userApi } from "../../services/api/user";
+import { useColorScheme } from "nativewind";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -50,6 +51,7 @@ const getSpecialtyVisuals = (name: string) => {
 };
 
 export default function HomeScreen() {
+  const { colorScheme, toggleColorScheme } = useColorScheme();
   const [phrase, setPhrase] = React.useState("");
   const [isSearchFocused, setIsSearchFocused] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -121,14 +123,14 @@ export default function HomeScreen() {
     const visuals = getSpecialtyVisuals(spec.name);
     return {
       ...spec,
-      icon: visuals.icon,
-      color: visuals.color,
-      bg: visuals.bg,
+      icon: spec.icon || visuals.icon,
+      color: spec.color || visuals.color,
+      bg: spec.bg || visuals.bg,
     };
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark" edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardContainer}
@@ -151,24 +153,34 @@ export default function HomeScreen() {
                 <Image
                   source={{ uri: user?.avatarUrl || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150" }}
                   style={{ width: 46, height: 46, borderRadius: 23, marginRight: 12 }}
-                  className="border-2 border-white shadow-sm"
+                  className="border-2 border-white dark:border-slate-800 shadow-sm"
                 />
                 <View className="flex-1">
-                  <Text className="text-xl font-bold text-slate-900" numberOfLines={1}>
+                  <Text className="text-xl font-bold text-text-main dark:text-text-main-dark" numberOfLines={1}>
                     {user ? `Hello ${user.firstName},` : "Hello,"}
                   </Text>
-                  <Text className="text-slate-500 text-xs font-medium mt-0.5" numberOfLines={1}>
+                  <Text className="text-text-muted dark:text-text-muted-dark text-xs font-medium mt-0.5" numberOfLines={1}>
                     {phrase || "How are you feeling today?"}
                   </Text>
                 </View>
               </View>
               <View className="flex-row items-center">
                 <TouchableOpacity
+                  onPress={toggleColorScheme}
+                  className="p-2 mr-0.5"
+                >
+                  <Ionicons 
+                    name={colorScheme === "dark" ? "sunny-outline" : "moon-outline"} 
+                    size={25} 
+                    color={colorScheme === "dark" ? "#F59E0B" : "#0F172A"} 
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
                   onPress={() => router.push("/doctor-chats")}
                   className="p-2 relative mr-0.5"
                 >
-                  <Ionicons name="chatbubbles-outline" size={25} color="#1E293B" />
-                  <View className="absolute top-1 right-1 w-4 h-4 bg-[#1D4ED8] rounded-full border border-white items-center justify-center">
+                  <Ionicons name="chatbubbles-outline" size={25} color={colorScheme === "dark" ? "#F8FAFC" : "#0F172A"} />
+                  <View className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full border border-white items-center justify-center">
                     <Text style={{ fontSize: 9 }} className="text-white font-bold text-center leading-none">
                       1r
                     </Text>
@@ -178,7 +190,7 @@ export default function HomeScreen() {
                   onPress={() => router.push("/notifications")}
                   className="p-2 relative"
                 >
-                  <Ionicons name="notifications-outline" size={25} color="#1E293B" />
+                  <Ionicons name="notifications-outline" size={25} color={colorScheme === "dark" ? "#F8FAFC" : "#0F172A"} />
                   <View className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full border border-white items-center justify-center">
                     <Text style={{ fontSize: 9 }} className="text-white font-bold text-center leading-none">
                       2
@@ -195,15 +207,15 @@ export default function HomeScreen() {
               <Animated.View entering={FadeInLeft.duration(150)} exiting={FadeOutLeft.duration(150)}>
                 <TouchableOpacity
                   onPress={handleCancelSearch}
-                  className="mr-3 w-10 h-10 items-center justify-center rounded-full bg-slate-100 border border-slate-200/50"
+                  className="mr-3 w-10 h-10 items-center justify-center rounded-full bg-slate-100 dark:bg-surface-dark border border-border-color dark:border-border-color-dark"
                   style={{ marginRight: 12 }}
                 >
-                  <Ionicons name="chevron-back" size={22} color="#1E293B" />
+                  <Ionicons name="chevron-back" size={22} color={colorScheme === "dark" ? "#F8FAFC" : "#0F172A"} />
                 </TouchableOpacity>
               </Animated.View>
             )}
 
-            <View className="flex-1 flex-row items-center bg-slate-100 px-5 py-3 rounded-full border border-slate-200/50">
+            <View className="flex-1 flex-row items-center bg-slate-100 dark:bg-surface-dark px-5 py-3 rounded-full border border-border-color dark:border-border-color-dark">
               <Ionicons name="search-outline" size={20} color="#94A3B8" style={{ marginRight: 8 }} />
               <TextInput
                 ref={inputRef}
@@ -212,7 +224,7 @@ export default function HomeScreen() {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 onFocus={handleSearchFocus}
-                className="flex-1 text-slate-800 text-sm font-medium"
+                className="flex-1 text-text-main dark:text-text-main-dark text-sm font-medium"
                 style={{ padding: 0 }}
               />
               {searchQuery.length > 0 && (
@@ -229,18 +241,18 @@ export default function HomeScreen() {
               {searchQuery.length > 0 ? (
                 /* Search Results Panel */
                 <View className="mb-8">
-                  <Text className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">
+                  <Text className="text-xs font-bold text-text-light dark:text-text-light-dark mb-4 uppercase tracking-wider">
                     Search Results ({searchResults.length})
                   </Text>
                   {searchResults.length === 0 ? (
                     <View className="items-center justify-center py-16">
-                      <View className="w-16 h-16 bg-white border border-slate-100 rounded-2xl items-center justify-center mb-4">
+                      <View className="w-16 h-16 bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-2xl items-center justify-center mb-4">
                         <Ionicons name="search-outline" size={32} color="#94A3B8" />
                       </View>
-                      <Text className="text-base font-bold text-slate-800 text-center">
+                      <Text className="text-base font-bold text-text-main dark:text-text-main-dark text-center">
                         No results found
                       </Text>
-                      <Text className="text-xs text-slate-400 mt-1 text-center px-4 leading-relaxed">
+                      <Text className="text-xs text-text-muted dark:text-text-muted-dark mt-1 text-center px-4 leading-relaxed">
                         {"We couldn't find any doctor or specialty matching \"" + searchQuery + "\""}
                       </Text>
                     </View>
@@ -249,7 +261,7 @@ export default function HomeScreen() {
                       <TouchableOpacity
                         key={`res-${doc.id}`}
                         onPress={() => router.push(`/doctor/${doc.id}`)}
-                        className="flex-row bg-white p-3 rounded-2xl border border-slate-100 mb-4 items-center"
+                        className="flex-row bg-surface dark:bg-surface-dark p-3 rounded-2xl border border-border-color dark:border-border-color-dark mb-4 items-center"
                       >
                         <Image
                           source={{ uri: doc.image }}
@@ -257,20 +269,20 @@ export default function HomeScreen() {
                           contentFit="cover"
                         />
                         <View className="flex-1 justify-center">
-                          <Text className="text-sm font-bold text-slate-800">
+                          <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">
                             {doc.name}
                           </Text>
-                          <Text className="text-xs text-slate-400 font-medium mt-0.5">
+                          <Text className="text-xs text-text-muted dark:text-text-muted-dark font-medium mt-0.5">
                             {doc.specialty}
                           </Text>
                           <View className="flex-row items-center mt-1">
                             <Ionicons name="star" size={12} color="#F59E0B" />
-                            <Text className="text-xs font-bold text-slate-700 ml-1">
+                            <Text className="text-xs font-bold text-text-main dark:text-text-main-dark ml-1">
                               {doc.rating}
                             </Text>
                           </View>
                         </View>
-                        <View className="w-8 h-8 bg-slate-50 border border-slate-100 rounded-full items-center justify-center">
+                        <View className="w-8 h-8 bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark rounded-full items-center justify-center">
                           <Ionicons name="chevron-forward" size={14} color="#64748B" />
                         </View>
                       </TouchableOpacity>
@@ -287,7 +299,7 @@ export default function HomeScreen() {
             <Animated.View layout={Layout.springify().damping(18)} className="flex-1">
               {/* Top Doctors */}
               <View className="mb-6">
-                <Text className="text-lg font-bold text-slate-900 mb-4">Top Doctors</Text>
+                <Text className="text-lg font-bold text-text-main dark:text-text-main-dark mb-4">Top Doctors</Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -297,25 +309,25 @@ export default function HomeScreen() {
                     <TouchableOpacity
                       key={doc.id}
                       onPress={() => router.push(`/doctor/${doc.id}`)}
-                      className="w-44 bg-white p-3 rounded-2xl border border-slate-100"
+                      className="w-44 bg-surface dark:bg-surface-dark p-3 rounded-2xl border border-border-color dark:border-border-color-dark"
                     >
                       <Image
                         source={{ uri: doc.image }}
                         style={{ width: "100%", height: 110, borderRadius: 20, marginBottom: 10 }}
                         contentFit="cover"
                       />
-                      <Text className="text-sm font-bold text-slate-800" numberOfLines={1}>
+                      <Text className="text-sm font-bold text-text-main dark:text-text-main-dark" numberOfLines={1}>
                         {doc.name}
                       </Text>
-                      <Text className="text-xs text-slate-400 font-medium mt-0.5">
+                      <Text className="text-xs text-text-muted dark:text-text-muted-dark font-medium mt-0.5">
                         {doc.specialty}
                       </Text>
                       <View className="flex-row items-center mt-2">
                         <Ionicons name="star" size={14} color="#F59E0B" />
-                        <Text className="text-xs font-bold text-slate-700 ml-1">
+                        <Text className="text-xs font-bold text-text-main dark:text-text-main-dark ml-1">
                           {doc.rating}
                         </Text>
-                        <Text className="text-xs text-slate-400 ml-1">
+                        <Text className="text-xs text-text-light dark:text-text-light-dark ml-1">
                           ({doc.reviews})
                         </Text>
                       </View>
@@ -327,9 +339,9 @@ export default function HomeScreen() {
               {/* Specialties */}
               <View className="mb-6">
                 <View className="flex-row justify-between items-center mb-4">
-                  <Text className="text-lg font-bold text-slate-900">Specialities</Text>
+                  <Text className="text-lg font-bold text-text-main dark:text-text-main-dark">Specialities</Text>
                   <TouchableOpacity onPress={() => router.push("/specialities")}>
-                    <Text className="text-sm font-bold text-[#1565C0]">See All</Text>
+                    <Text className="text-sm font-bold text-primary">See All</Text>
                   </TouchableOpacity>
                 </View>
                 <View className="flex-row justify-between">
@@ -346,7 +358,7 @@ export default function HomeScreen() {
                       >
                         <Ionicons name={spec.icon} size={22} color={spec.color} />
                       </View>
-                      <Text className="text-xs font-bold text-slate-700 text-center" numberOfLines={1}>
+                      <Text className="text-xs font-bold text-text-main dark:text-text-main-dark text-center" numberOfLines={1}>
                         {spec.name}
                       </Text>
                     </TouchableOpacity>
@@ -356,12 +368,12 @@ export default function HomeScreen() {
 
               {/* Other Doctors */}
               <View className="mb-8">
-                <Text className="text-lg font-bold text-slate-900 mb-4">Other Doctors</Text>
+                <Text className="text-lg font-bold text-text-main dark:text-text-main-dark mb-4">Other Doctors</Text>
                 {otherDoctors.map((doc) => (
                   <TouchableOpacity
                     key={doc.id}
                     onPress={() => router.push(`/doctor/${doc.id}`)}
-                    className="flex-row bg-white p-3 rounded-2xl border border-slate-100 mb-4 items-center"
+                    className="flex-row bg-surface dark:bg-surface-dark p-3 rounded-2xl border border-border-color dark:border-border-color-dark mb-4 items-center"
                   >
                     <Image
                       source={{ uri: doc.image }}
@@ -369,23 +381,23 @@ export default function HomeScreen() {
                       contentFit="cover"
                     />
                     <View className="flex-1 justify-center">
-                      <Text className="text-base font-bold text-slate-800">
+                      <Text className="text-base font-bold text-text-main dark:text-text-main-dark">
                         {doc.name}
                       </Text>
-                      <Text className="text-xs text-slate-400 font-medium mt-0.5">
+                      <Text className="text-xs text-text-muted dark:text-text-muted-dark font-medium mt-0.5">
                         {doc.specialty}
                       </Text>
                       <View className="flex-row items-center mt-1.5">
                         <Ionicons name="star" size={14} color="#F59E0B" />
-                        <Text className="text-xs font-bold text-slate-700 ml-1">
+                        <Text className="text-xs font-bold text-text-main dark:text-text-main-dark ml-1">
                           {doc.rating}
                         </Text>
-                        <Text className="text-xs text-slate-400 ml-1">
+                        <Text className="text-xs text-text-light dark:text-text-light-dark ml-1">
                           ({doc.reviews} reviews)
                         </Text>
                       </View>
                     </View>
-                    <View className="w-9 h-9 bg-slate-50 border border-slate-100 rounded-full items-center justify-center">
+                    <View className="w-9 h-9 bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark rounded-full items-center justify-center">
                       <Ionicons name="chevron-forward" size={16} color="#64748B" />
                     </View>
                   </TouchableOpacity>
