@@ -7,7 +7,6 @@ import { hashPassword, comparePassword } from "../helpers/hash.helper";
 import { generateToken } from "../helpers/jwt.helper";
 import { generateOTP } from "../helpers/otp.helper";
 import { sendEmail } from "../services/email.service";
-import { sendSMS } from "../services/sms.service";
 import { sendSuccess, sendCreated, sendBadRequest, sendForbidden } from "../helpers/response.helper";
 import { getOTPTemplate } from "../templates/otp.template";
 import { getResetTemplate } from "../templates/reset.template";
@@ -67,11 +66,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     // Log action to audit logs
     await logAction(userId, "USER_REGISTERED", `User registered with email: ${email} and role: ${role}`, req.ip);
 
-    // Send OTP (non-blocking, logged in dev console)
-    const otpMessage = `Your Smart Doctor verification code is: ${otpCode}. It is valid for 10 minutes.`;
-    if (phoneNumber) {
-      sendSMS(phoneNumber, otpMessage);
-    }
+    // Send OTP via email (non-blocking, logged in dev console)
     sendEmail(
       email,
       "Smart Doctor - Verification Code",
@@ -172,10 +167,7 @@ export const resend = async (req: Request, res: Response, next: NextFunction) =>
       expiresAt: otpExpires
     });
 
-    const otpMessage = `Your new Smart Doctor verification code is: ${otpCode}. It is valid for 10 minutes.`;
-    if (user.phoneNumber) {
-      sendSMS(user.phoneNumber, otpMessage);
-    }
+    // Send OTP via email
     sendEmail(
       user.email,
       "Smart Doctor - Verification Code",
@@ -223,10 +215,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         expiresAt: otpExpires
       });
 
-      const otpMessage = `Your Smart Doctor verification code is: ${otpCode}. It is valid for 10 minutes.`;
-      if (user.phoneNumber) {
-        sendSMS(user.phoneNumber, otpMessage);
-      }
+      // Send OTP via email
       sendEmail(
         user.email,
         "Smart Doctor - Verification Code",
@@ -288,10 +277,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
       expiresAt: otpExpires
     });
 
-    const otpMessage = `Your Smart Doctor password reset code is: ${otpCode}. It is valid for 10 minutes.`;
-    if (user.phoneNumber) {
-      sendSMS(user.phoneNumber, otpMessage);
-    }
+    // Send password reset code via email
     sendEmail(
       user.email,
       "Smart Doctor - Reset Password Code",
