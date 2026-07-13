@@ -9,7 +9,6 @@ import {
   Platform,
   UIManager,
   LayoutAnimation,
-  Alert,
   Modal,
   KeyboardAvoidingView,
 } from "react-native";
@@ -19,6 +18,7 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { ALL_DOCTORS } from "../../constants/data";
 import ChatInput from "../../components/ChatInput";
+import { userApi } from "../../services/api/user";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -41,7 +41,24 @@ export default function DoctorChatScreen() {
   const isDark = colorScheme === "dark";
 
   const { id } = useLocalSearchParams();
-  const doctor = ALL_DOCTORS.find((d) => d.id === id) || ALL_DOCTORS[0];
+  const [doctor, setDoctor] = useState<any>(
+    ALL_DOCTORS.find((d) => d.id === id) || ALL_DOCTORS[0]
+  );
+
+  useEffect(() => {
+    if (typeof id === "string") {
+      userApi.getDoctorDetail(id)
+        .then((response) => {
+          if (response.status === "success" && response.data) {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setDoctor(response.data);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching doctor detail in chat:", err);
+        });
+    }
+  }, [id]);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -241,7 +258,7 @@ export default function DoctorChatScreen() {
           ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
           className="flex-1 px-6 bg-background dark:bg-background-dark"
-          contentContainerStyle={{ paddingVertical: 20, paddingBottom: 60 }}
+          contentContainerStyle={{ paddingVertical: 20, paddingBottom: 16 }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
           {messages.map((msg) => {

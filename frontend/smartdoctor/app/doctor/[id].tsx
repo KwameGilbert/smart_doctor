@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useColorScheme } from "nativewind";
 import {
   View,
@@ -9,11 +9,14 @@ import {
   Platform,
   UIManager,
   LayoutAnimation,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
+import { userApi } from "../../services/api/user";
+import { ALL_DOCTORS } from "../../constants/data";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -21,16 +24,34 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 
 const TABS = ["About", "Reviews", "Experience", "Education"];
 
-import { ALL_DOCTORS } from "../../constants/data";
-
 export default function DoctorDetailsScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
   const { id } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState("About");
+  const [doctor, setDoctor] = useState<any>(
+    ALL_DOCTORS.find((d) => d.id === id) || ALL_DOCTORS[0]
+  );
+  const [loading, setLoading] = useState(true);
 
-  const doctor = ALL_DOCTORS.find((d) => d.id === id) || ALL_DOCTORS[0];
+  useEffect(() => {
+    if (typeof id === "string") {
+      userApi.getDoctorDetail(id)
+        .then((response) => {
+          if (response.status === "success" && response.data) {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setDoctor(response.data);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching doctor details:", err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [id]);
 
   const handleTabPress = (tab: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -155,7 +176,7 @@ export default function DoctorDetailsScreen() {
             </View>
 
             {/* Review Cards */}
-            {doctor.reviewsList.slice(0, 2).map((review) => (
+            {doctor.reviewsList.slice(0, 2).map((review: any) => (
               <View key={review.id} className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-4 shadow-sm shadow-slate-100/50">
                 <View className="flex-row justify-between items-start mb-3">
                   <Image
@@ -228,7 +249,7 @@ export default function DoctorDetailsScreen() {
             </View>
 
             {/* Review Cards */}
-            {doctor.reviewsList.map((review) => (
+            {doctor.reviewsList.map((review: any) => (
               <View key={review.id} className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-4 shadow-sm shadow-slate-100/50">
                 <View className="flex-row justify-between items-start mb-3">
                   <Image
@@ -265,7 +286,7 @@ export default function DoctorDetailsScreen() {
           <View className="px-6 animate-fade-in">
             {doctor.experienceList && doctor.experienceList.length > 0 ? (
               <View className="pl-4 border-l border-border-color dark:border-border-color-dark ml-2 py-1">
-                {doctor.experienceList.map((exp, index) => (
+                {doctor.experienceList.map((exp: any, index: number) => (
                   <View key={index} className="mb-6 relative">
                     {/* Timeline dot */}
                     <View 
@@ -301,7 +322,7 @@ export default function DoctorDetailsScreen() {
           <View className="px-6 animate-fade-in">
             {doctor.educationList && doctor.educationList.length > 0 ? (
               <View>
-                {doctor.educationList.map((edu, index) => (
+                {doctor.educationList.map((edu: any, index: number) => (
                   <View key={index} className="bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-4 flex-row items-center">
                     <View className="w-10 h-10 bg-primary-light dark:bg-primary-light-dark rounded-2xl items-center justify-center mr-4">
                       <Ionicons name="school" size={20} color={isDark ? "#F8FAFC" : "#1D4ED8"} />
