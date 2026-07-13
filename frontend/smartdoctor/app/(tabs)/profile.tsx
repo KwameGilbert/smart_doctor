@@ -9,13 +9,14 @@ import {
   Platform,
   UIManager,
   LayoutAnimation,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { DUMMY_MEDICAL_RECORDS, MedicalRecord } from "../../constants/data";
+import { tokenStorage } from "../../services/api/storage";
+import { useAlert } from "../../components/ui/AlertModal";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -23,6 +24,7 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function ProfileScreen() {
+  const { showAlert } = useAlert();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -49,11 +51,11 @@ export default function ProfileScreen() {
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setRecords([newRecord, ...records]);
-    Alert.alert("Upload Success", `"${newRecord.name}" has been uploaded to your profile.`);
+    showAlert("Upload Success", `"${newRecord.name}" has been uploaded to your profile.`);
   };
 
   const handleDeleteRecord = (id: string, name: string) => {
-    Alert.alert(
+    showAlert(
       "Delete Document",
       `Are you sure you want to delete "${name}"?`,
       [
@@ -64,6 +66,24 @@ export default function ProfileScreen() {
           onPress: () => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setRecords((prev) => prev.filter((r) => r.id !== id));
+          },
+        },
+      ]
+    );
+  };
+
+  const handleLogout = () => {
+    showAlert(
+      "Log Out",
+      "Are you sure you want to log out of your account?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Log Out",
+          style: "destructive",
+          onPress: async () => {
+            await tokenStorage.removeToken();
+            router.replace("/auth");
           },
         },
       ]
@@ -191,7 +211,7 @@ export default function ProfileScreen() {
 
         {/* Log Out Button */}
         <TouchableOpacity
-          onPress={() => router.replace("/auth")}
+          onPress={handleLogout}
           className="border border-red-200 dark:border-red-900/50 bg-red-50/20 dark:bg-red-950/20 py-4 rounded-3xl items-center justify-center w-full mb-10"
         >
           <Text className="text-red-500 font-bold text-sm">Log Out</Text>
