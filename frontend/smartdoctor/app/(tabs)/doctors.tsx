@@ -242,7 +242,7 @@ export default function DoctorsScreen() {
               </Text>
               <TouchableOpacity
                 onPress={handleResetFilters}
-                className="bg-[#1565C0] px-6 py-3 rounded-full"
+                className="bg-primary px-6 py-3 rounded-full"
               >
                 <Text className="text-white font-bold text-xs">Reset All Filters</Text>
               </TouchableOpacity>
@@ -252,7 +252,7 @@ export default function DoctorsScreen() {
               <TouchableOpacity
                 key={doc.id}
                 onPress={() => router.push(`/doctor/${doc.id}`)}
-                className="bg-white border border-slate-100 rounded-3xl p-4 mb-4 shadow-sm shadow-slate-100/50 flex-row"
+                className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-4 mb-4 shadow-sm shadow-black/10 flex-row"
               >
                 <Image
                   source={{ uri: doc.image }}
@@ -261,10 +261,10 @@ export default function DoctorsScreen() {
                 />
                 <View className="flex-1 ml-4 justify-between py-1">
                   <View>
-                    <Text className="text-base font-bold text-slate-900 leading-tight">
+                    <Text className="text-base font-bold text-text-main dark:text-text-main-dark leading-tight">
                       {doc.name}
                     </Text>
-                    <Text className="text-xs font-bold text-[#1D4ED8] mt-0.5">
+                    <Text className="text-xs font-bold text-primary mt-0.5">
                       {doc.specialty}
                     </Text>
                   </View>
@@ -273,28 +273,28 @@ export default function DoctorsScreen() {
                   <View className="flex-row gap-4 mt-2">
                     <View className="flex-row items-center">
                       <Ionicons name="star" size={12} color="#FBBF24" />
-                      <Text className="text-[11px] font-bold text-slate-700 ml-1">
+                      <Text className="text-[11px] font-bold text-text-main dark:text-text-main-dark ml-1">
                         {doc.rating}
                       </Text>
-                      <Text className="text-[10px] text-slate-400 ml-0.5">
+                      <Text className="text-[10px] text-text-light dark:text-text-light-dark ml-0.5">
                         ({doc.reviews})
                       </Text>
                     </View>
                     <View className="flex-row items-center">
-                      <Ionicons name="briefcase-outline" size={12} color="#64748B" />
-                      <Text className="text-[11px] font-bold text-slate-600 ml-1">
+                      <Ionicons name="briefcase-outline" size={12} color={isDark ? "#94A3B8" : "#64748B"} />
+                      <Text className="text-[11px] font-bold text-text-muted dark:text-text-muted-dark ml-1">
                         {doc.experience}
                       </Text>
                     </View>
                   </View>
-
-                  <View className="flex-row justify-between items-center mt-2.5 pt-2 border-t border-slate-100">
-                    <Text className="text-[10px] text-slate-400 font-bold">
+ 
+                  <View className="flex-row justify-between items-center mt-2.5 pt-2 border-t border-border-color dark:border-border-color-dark">
+                    <Text className="text-[10px] text-text-light dark:text-text-light-dark font-bold">
                       {doc.patients} Patients
                     </Text>
                     <View className="flex-row items-center">
-                      <Text className="text-[11px] font-bold text-[#1565C0] mr-1">Book Session</Text>
-                      <Ionicons name="chevron-forward" size={12} color="#1565C0" />
+                      <Text className="text-[11px] font-bold text-primary mr-1">Book Session</Text>
+                      <Ionicons name="chevron-forward" size={12} color="#1D4ED8" />
                     </View>
                   </View>
                 </View>
@@ -312,25 +312,25 @@ export default function DoctorsScreen() {
         onRequestClose={() => setIsFilterModalOpen(false)}
       >
         <View style={styles.modalOverlay}>
-          <View className="bg-white rounded-t-[40px] px-6 pt-6 pb-10 w-full max-h-[85%] absolute bottom-0 shadow-2xl">
+          <View className="bg-surface dark:bg-surface-dark rounded-t-[40px] px-6 pt-6 pb-10 w-full max-h-[85%] absolute bottom-0 shadow-2xl border-t border-border-color dark:border-border-color-dark">
             {/* Modal Header */}
             <View className="flex-row justify-between items-center mb-6">
               <View>
-                <Text className="text-lg font-bold text-slate-900">Filter Options</Text>
-                <Text className="text-xs text-slate-400 font-medium">Refine your search for doctors</Text>
+                <Text className="text-lg font-bold text-text-main dark:text-text-main-dark">Filter Options</Text>
+                <Text className="text-xs text-text-muted dark:text-text-muted-dark font-medium">Refine your search for doctors</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setIsFilterModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center"
               >
-                <Ionicons name="close" size={18} color="#64748B" />
+                <Ionicons name="close" size={18} color={isDark ? "#94A3B8" : "#64748B"} />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Sort Section */}
               <View className="mb-6">
-                <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">Sort Results By</Text>
+                <Text className="text-xs font-bold text-text-light dark:text-text-light-dark mb-3 uppercase tracking-wider">Sort Results By</Text>
                 <View className="flex-row flex-wrap gap-2.5">
                   {(["None", "Rating", "Experience", "Patients"] as SortOption[]).map((opt) => {
                     const isSelected = sortBy === opt;
@@ -340,10 +340,10 @@ export default function DoctorsScreen() {
                         onPress={() => setSortBy(opt)}
                         style={{ width: "47%" }}
                         className={`py-3 rounded-2xl items-center border ${
-                          isSelected ? "bg-blue-50 border-[#1D4ED8]" : "bg-slate-50 border-slate-100"
+                          isSelected ? "bg-primary-light dark:bg-primary-light-dark border-primary" : "bg-background dark:bg-background-dark border-border-color dark:border-border-color-dark"
                         }`}
                       >
-                        <Text className={`text-xs font-bold ${isSelected ? "text-[#1D4ED8]" : "text-slate-700"}`}>
+                        <Text className={`text-xs font-bold ${isSelected ? "text-primary" : "text-text-muted dark:text-text-muted-dark"}`}>
                           {opt === "None" ? "Default Order" : `${opt} (High to Low)`}
                         </Text>
                       </TouchableOpacity>
@@ -354,7 +354,7 @@ export default function DoctorsScreen() {
 
               {/* Rating Section */}
               <View className="mb-6">
-                <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">Minimum Rating</Text>
+                <Text className="text-xs font-bold text-text-light dark:text-text-light-dark mb-3 uppercase tracking-wider">Minimum Rating</Text>
                 <View className="flex-row flex-wrap gap-2">
                   {[null, 4.6, 4.7, 4.8, 4.9].map((val) => {
                     const isSelected = minRating === val;
@@ -364,10 +364,10 @@ export default function DoctorsScreen() {
                         onPress={() => setMinRating(val)}
                         style={{ width: "31%" }}
                         className={`py-3 rounded-2xl items-center border ${
-                          isSelected ? "bg-blue-50 border-[#1D4ED8]" : "bg-slate-50 border-slate-100"
+                          isSelected ? "bg-primary-light dark:bg-primary-light-dark border-primary" : "bg-background dark:bg-background-dark border-border-color dark:border-border-color-dark"
                         }`}
                       >
-                        <Text className={`text-xs font-bold ${isSelected ? "text-[#1D4ED8]" : "text-slate-700"}`}>
+                        <Text className={`text-xs font-bold ${isSelected ? "text-primary" : "text-text-muted dark:text-text-muted-dark"}`}>
                           {val === null ? "Any Rating" : `${val} ★`}
                         </Text>
                       </TouchableOpacity>
@@ -378,7 +378,7 @@ export default function DoctorsScreen() {
 
               {/* Experience Section */}
               <View className="mb-8">
-                <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">Minimum Experience</Text>
+                <Text className="text-xs font-bold text-text-light dark:text-text-light-dark mb-3 uppercase tracking-wider">Minimum Experience</Text>
                 <View className="flex-row flex-wrap gap-2">
                   {[null, 5, 8, 10, 12, 14].map((val) => {
                     const isSelected = minExperience === val;
@@ -388,10 +388,10 @@ export default function DoctorsScreen() {
                         onPress={() => setMinExperience(val)}
                         style={{ width: "31%" }}
                         className={`py-3 rounded-2xl items-center border ${
-                          isSelected ? "bg-blue-50 border-[#1D4ED8]" : "bg-slate-50 border-slate-100"
+                          isSelected ? "bg-primary-light dark:bg-primary-light-dark border-primary" : "bg-background dark:bg-background-dark border-border-color dark:border-border-color-dark"
                         }`}
                       >
-                        <Text className={`text-xs font-bold ${isSelected ? "text-[#1D4ED8]" : "text-slate-700"}`}>
+                        <Text className={`text-xs font-bold ${isSelected ? "text-primary" : "text-text-muted dark:text-text-muted-dark"}`}>
                           {val === null ? "Any Experience" : `${val}+ Yrs`}
                         </Text>
                       </TouchableOpacity>
@@ -407,13 +407,13 @@ export default function DoctorsScreen() {
                     handleResetFilters();
                     setIsFilterModalOpen(false);
                   }}
-                  className="flex-1 py-4 rounded-full border border-slate-200 bg-white items-center"
+                  className="flex-1 py-4 rounded-full border border-border-color dark:border-border-color-dark bg-surface dark:bg-surface-dark items-center"
                 >
-                  <Text className="text-slate-500 font-bold text-sm">Clear All</Text>
+                  <Text className="text-text-muted dark:text-text-muted-dark font-bold text-sm">Clear All</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => setIsFilterModalOpen(false)}
-                  className="flex-1 py-4 rounded-full bg-[#1D4ED8] items-center shadow-md shadow-blue-500/20"
+                  className="flex-1 py-4 rounded-full bg-primary items-center shadow-md shadow-blue-500/20"
                 >
                   <Text className="text-white font-bold text-sm">Apply Filters</Text>
                 </TouchableOpacity>
