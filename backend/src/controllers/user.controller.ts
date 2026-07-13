@@ -35,6 +35,99 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
 };
 
 /**
+ * Get home dashboard data including user profile, specialties, top doctors, and other doctors.
+ */
+export const getHomeDashboard = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user?.id;
+    const role = req.user?.role;
+
+    if (!userId || !role) {
+      return sendBadRequest(res, "Invalid authentication payload.");
+    }
+
+    // 1. Fetch user profile
+    const profile = await UserModel.findFullProfile(userId, role);
+    if (!profile) {
+      return sendNotFound(res, "Profile not found.");
+    }
+
+    // 2. Fetch specialties
+    const specialties = await db("specialties").select("id", "name", "description");
+
+    // 3. Fetch approved doctors
+    const doctors = await db("users")
+      .join("doctors", "users.id", "=", "doctors.id")
+      .where("doctors.status", "APPROVED")
+      .select(
+        "users.id",
+        "users.firstName",
+        "users.lastName",
+        "users.avatarUrl",
+        "doctors.bio",
+        "doctors.consultationFee",
+        "doctors.experienceYears",
+        "doctors.rating",
+        "doctors.licenseNumber",
+        db.raw('(SELECT COUNT(*)::int FROM reviews WHERE reviews."doctorId" = doctors.id) as "reviewsCount"'),
+        db.raw('(SELECT COUNT(DISTINCT "patientId")::int FROM appointments WHERE appointments."doctorId" = doctors.id AND appointments.status = \'COMPLETED\') as "patientsCount"')
+      )
+      .orderBy("doctors.rating", "desc");
+
+    // Fetch specialties map for all doctors
+    const specialtiesMap = await db("doctorSpecialties")
+      .join("specialties", "doctorSpecialties.specialtyId", "=", "specialties.id")
+      .select("doctorSpecialties.doctorId", "specialties.name");
+
+    const docSpecialties: Record<string, string[]> = {};
+    for (const row of specialtiesMap) {
+      if (!docSpecialties[row.doctorId]) {
+        docSpecialties[row.doctorId] = [];
+      }
+      docSpecialties[row.doctorId].push(row.name);
+    }
+
+    const formattedDoctors = doctors.map((doc: any) => ({
+      id: doc.id,
+      name: `Dr. ${doc.firstName} ${doc.lastName}`,
+      specialty: docSpecialties[doc.id]?.join(", ") || "General Medicine",
+      rating: parseFloat(doc.rating) || 0.0,
+      reviews: doc.reviewsCount || 0,
+      image: doc.avatarUrl || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200",
+      experience: `${doc.experienceYears} Years`,
+      patients: doc.patientsCount > 0 ? `+${doc.patientsCount}` : "New",
+      about: doc.bio || "",
+      doctorIdCode: doc.licenseNumber || `DR${doc.id.slice(0, 4).toUpperCase()}`,
+      avgSessionTime: "30 min",
+      prescriptionType: "Online & Offline",
+      contracts: "All Insurance"
+    }));
+
+    // Partition doctors into top and other
+    const mid = Math.ceil(formattedDoctors.length / 2);
+    const topDoctors = formattedDoctors.slice(0, mid);
+    const otherDoctors = formattedDoctors.slice(mid);
+
+    return sendSuccess(res, {
+      user: {
+        id: profile.id,
+        email: profile.email,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        avatarUrl: profile.avatarUrl,
+        role: profile.role
+      },
+      specialties,
+      topDoctors,
+      otherDoctors
+    }, "Home dashboard data retrieved successfully.");
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+
  * Update current user's core and role-specific details in a transaction.
  */
 export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {

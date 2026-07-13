@@ -198,9 +198,9 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       return sendBadRequest(res, "Missing email or password.");
     }
 
-    const user = await UserModel.findByEmail(email);
+    const user = await UserModel.findByEmailOrPhone(email);
     if (!user) {
-      return sendBadRequest(res, "Invalid email or password.");
+      return sendBadRequest(res, "Invalid email/phone or password.");
     }
 
     const isPasswordMatch = await comparePassword(password, user.password!);
