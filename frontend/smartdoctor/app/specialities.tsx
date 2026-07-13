@@ -1,37 +1,86 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, FlatList, TextInput } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, FlatList, TextInput, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { specialtyApi } from "../services/api/specialty";
 
 interface SpecialtyItem {
   id: string;
   name: string;
-  doctorCount: number;
+  description?: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
   bg: string;
 }
 
-const ALL_SPECIALTIES: SpecialtyItem[] = [
-  { id: "1", name: "Cardiology", doctorCount: 18, icon: "heart", color: "#EF4444", bg: "#FEF2F2" },
-  { id: "2", name: "Pediatrics", doctorCount: 24, icon: "body", color: "#3B82F6", bg: "#EFF6FF" },
-  { id: "3", name: "Dermatology", doctorCount: 14, icon: "sparkles", color: "#10B981", bg: "#ECFDF5" },
-  { id: "4", name: "Neurology", doctorCount: 12, icon: "pulse", color: "#8B5CF6", bg: "#F5F3FF" },
-  { id: "5", name: "Orthopedics", doctorCount: 16, icon: "fitness", color: "#F59E0B", bg: "#FFFBEB" },
-  { id: "6", name: "Ophthalmology", doctorCount: 10, icon: "eye", color: "#EC4899", bg: "#FDF2F8" },
-  { id: "7", name: "Dentistry", doctorCount: 20, icon: "medical", color: "#06B6D4", bg: "#ECFEFF" },
-  { id: "8", name: "Psychiatry", doctorCount: 15, icon: "chatbubbles", color: "#6366F1", bg: "#EEF2FF" },
-  { id: "9", name: "Gastroenterology", doctorCount: 9, icon: "flask", color: "#14B8A6", bg: "#F0FDF4" },
-  { id: "10", name: "Oncology", doctorCount: 8, icon: "ribbon", color: "#F43F5E", bg: "#FFF1F2" },
-  { id: "11", name: "General Medicine", doctorCount: 32, icon: "medkit", color: "#0EA5E9", bg: "#F0F9FF" },
-  { id: "12", name: "Radiology", doctorCount: 7, icon: "aperture", color: "#64748B", bg: "#F8FAFC" },
-];
+const getSpecialtyUiProperties = (name: string) => {
+  const normalized = name.toLowerCase();
+  if (normalized.includes("cardi")) {
+    return { icon: "heart" as const, color: "#EF4444", bg: "#FEF2F2" };
+  }
+  if (normalized.includes("pedia")) {
+    return { icon: "body" as const, color: "#3B82F6", bg: "#EFF6FF" };
+  }
+  if (normalized.includes("derm")) {
+    return { icon: "sparkles" as const, color: "#10B981", bg: "#ECFDF5" };
+  }
+  if (normalized.includes("neur")) {
+    return { icon: "pulse" as const, color: "#8B5CF6", bg: "#F5F3FF" };
+  }
+  if (normalized.includes("orth")) {
+    return { icon: "fitness" as const, color: "#F59E0B", bg: "#FFFBEB" };
+  }
+  if (normalized.includes("ophth")) {
+    return { icon: "eye" as const, color: "#EC4899", bg: "#FDF2F8" };
+  }
+  if (normalized.includes("dent") || normalized.includes("tooth")) {
+    return { icon: "medical" as const, color: "#06B6D4", bg: "#ECFEFF" };
+  }
+  if (normalized.includes("psych") || normalized.includes("mental")) {
+    return { icon: "chatbubbles" as const, color: "#6366F1", bg: "#EEF2FF" };
+  }
+  if (normalized.includes("gastro") || normalized.includes("stomach")) {
+    return { icon: "flask" as const, color: "#14B8A6", bg: "#F0FDF4" };
+  }
+  if (normalized.includes("onc")) {
+    return { icon: "ribbon" as const, color: "#F43F5E", bg: "#FFF1F2" };
+  }
+  if (normalized.includes("radi")) {
+    return { icon: "aperture" as const, color: "#64748B", bg: "#F8FAFC" };
+  }
+  return { icon: "medkit" as const, color: "#0EA5E9", bg: "#F0F9FF" };
+};
 
 export default function SpecialitiesScreen() {
   const [search, setSearch] = useState("");
+  const [specialties, setSpecialties] = useState<SpecialtyItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredSpecialties = ALL_SPECIALTIES.filter((spec) =>
+  useEffect(() => {
+    const fetchSpecialties = async () => {
+      try {
+        const response = await specialtyApi.list();
+        if (response.status === "success") {
+          const items = response.data.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            ...getSpecialtyUiProperties(item.name),
+          }));
+          setSpecialties(items);
+        }
+      } catch (error) {
+        console.error("Failed to fetch specialties:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSpecialties();
+  }, []);
+
+  const filteredSpecialties = specialties.filter((spec) =>
     spec.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -69,7 +118,11 @@ export default function SpecialitiesScreen() {
       </View>
 
       {/* Grid List */}
-      {filteredSpecialties.length === 0 ? (
+      {loading ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#1565C0" />
+        </View>
+      ) : filteredSpecialties.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <View className="w-16 h-16 bg-white rounded-2xl items-center justify-center mb-4 shadow-sm border border-slate-100">
             <Ionicons name="alert-circle-outline" size={32} color="#94A3B8" />
@@ -104,8 +157,8 @@ export default function SpecialitiesScreen() {
               <Text className="text-sm font-bold text-slate-800 text-center mb-1" numberOfLines={1}>
                 {item.name}
               </Text>
-              <Text className="text-xs text-slate-400 font-semibold text-center">
-                {item.doctorCount} Doctors
+              <Text className="text-xs text-[#1565C0] font-bold text-center">
+                Consult Now
               </Text>
             </TouchableOpacity>
           )}
