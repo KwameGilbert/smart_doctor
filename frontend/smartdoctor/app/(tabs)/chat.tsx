@@ -187,7 +187,7 @@ export default function ChatScreen() {
           ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
           className="flex-1 px-6 bg-background dark:bg-background-dark"
-          contentContainerStyle={{ paddingVertical: 20, paddingBottom: 60 }}
+          contentContainerStyle={{ paddingVertical: 20, paddingBottom: 15 }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
           {messages.map((msg) => {
@@ -331,6 +331,7 @@ export default function ChatScreen() {
         {/* WhatsApp Reusable Chat Input Component */}
         <ChatInput
           placeholder="Describe your symptoms or ask a health question..."
+          isTabScreen={true}
           onSend={handleSend}
         />
       </KeyboardAvoidingView>

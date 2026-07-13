@@ -19,6 +19,7 @@ import { DUMMY_MEDICAL_RECORDS, MedicalRecord } from "../constants/data";
 
 interface ChatInputProps {
   placeholder?: string;
+  isTabScreen?: boolean;
   onSend: (
     text: string,
     attachments: {
@@ -29,7 +30,7 @@ interface ChatInputProps {
   ) => void;
 }
 
-export default function ChatInput({ placeholder, onSend }: ChatInputProps) {
+export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInputProps) {
   const insets = useSafeAreaInsets();
   const [inputText, setInputText] = useState("");
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
@@ -218,8 +219,8 @@ export default function ChatInput({ placeholder, onSend }: ChatInputProps) {
       {/* Input Bar (WhatsApp style, responsive bottom safe padding) */}
       <View 
         style={{
-          paddingBottom: isKeyboardOpen ? 12 : Math.max(insets.bottom, 12),
-          paddingTop: 12,
+          paddingBottom: isKeyboardOpen ? 10 : (isTabScreen ? 10 : Math.max(insets.bottom, 10)),
+          paddingTop: 10,
         }}
         className="px-5 bg-white border-t border-slate-100 flex-row items-center gap-3"
       >
