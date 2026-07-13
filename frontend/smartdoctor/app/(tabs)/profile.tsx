@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useColorScheme } from "nativewind";
 import {
   View,
   Text,
@@ -22,6 +23,9 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function ProfileScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const [records, setRecords] = useState<MedicalRecord[]>(DUMMY_MEDICAL_RECORDS);
 
   const handleUploadDocument = () => {
@@ -67,67 +71,67 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark" edges={["top"]}>
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1 px-6 pt-4">
         {/* User Card */}
-        <View className="bg-white border border-slate-100 rounded-3xl p-5 mb-6 flex-row items-center">
+        <View className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-6 flex-row items-center">
           <Image
             source={{ uri: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150" }}
             style={{ width: 68, height: 68, borderRadius: 22 }}
           />
           <View className="ml-4 flex-1">
-            <Text className="text-lg font-bold text-slate-900">Elton John</Text>
-            <Text className="text-xs text-slate-400 font-semibold mt-0.5">elton.john@gmail.com</Text>
-            <Text className="text-xs text-[#1D4ED8] font-bold mt-1">+233 24 123 4567</Text>
+            <Text className="text-lg font-bold text-text-main dark:text-text-main-dark">Elton John</Text>
+            <Text className="text-xs text-text-light dark:text-text-light-dark font-semibold mt-0.5">elton.john@gmail.com</Text>
+            <Text className="text-xs text-primary font-bold mt-1">+233 24 123 4567</Text>
           </View>
         </View>
 
         {/* Health Metrics Grid */}
         <View className="flex-row justify-between mb-6">
-          <View className="w-[31%] bg-white border border-slate-100 p-3 rounded-2xl items-center">
-            <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Blood</Text>
-            <Text className="text-base font-extrabold text-red-500">O+</Text>
+          <View className="w-[31%] bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark p-3 rounded-2xl items-center">
+            <Text className="text-[10px] text-text-light dark:text-text-light-dark font-bold uppercase tracking-wider mb-1">Blood</Text>
+            <Text className="text-base font-extrabold text-red-500 dark:text-red-400">O+</Text>
           </View>
-          <View className="w-[31%] bg-white border border-slate-100 p-3 rounded-2xl items-center">
-            <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Height</Text>
-            <Text className="text-base font-extrabold text-slate-800">178 cm</Text>
+          <View className="w-[31%] bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark p-3 rounded-2xl items-center">
+            <Text className="text-[10px] text-text-light dark:text-text-light-dark font-bold uppercase tracking-wider mb-1">Height</Text>
+            <Text className="text-base font-extrabold text-text-main dark:text-text-main-dark">178 cm</Text>
           </View>
-          <View className="w-[31%] bg-white border border-slate-100 p-3 rounded-2xl items-center">
-            <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Weight</Text>
-            <Text className="text-base font-extrabold text-slate-800">72 kg</Text>
+          <View className="w-[31%] bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark p-3 rounded-2xl items-center">
+            <Text className="text-[10px] text-text-light dark:text-text-light-dark font-bold uppercase tracking-wider mb-1">Weight</Text>
+            <Text className="text-base font-extrabold text-text-main dark:text-text-main-dark">72 kg</Text>
           </View>
         </View>
 
         {/* Integrated Medical Records section */}
-        <View className="bg-white border border-slate-100 rounded-3xl p-5 mb-6">
+        <View className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-6">
           <View className="flex-row justify-between items-center mb-4 pb-1">
             <View>
-              <Text className="text-sm font-bold text-slate-900">Medical Records</Text>
-              <Text className="text-[10px] text-slate-400 font-semibold mt-0.5">Prescriptions, labs & scans</Text>
+              <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">Medical Records</Text>
+              <Text className="text-[10px] text-text-light dark:text-text-light-dark font-semibold mt-0.5">Prescriptions, labs & scans</Text>
             </View>
             <TouchableOpacity
               onPress={handleUploadDocument}
-              className="px-4 py-2 bg-blue-50 border border-blue-100 rounded-2xl flex-row items-center"
+              className="px-4 py-2 bg-primary-light dark:bg-primary-light-dark border border-border-color dark:border-border-color-dark rounded-2xl flex-row items-center"
             >
-              <Ionicons name="cloud-upload" size={14} color="#1D4ED8" style={{ marginRight: 4 }} />
-              <Text className="text-xs font-bold text-[#1D4ED8]">Upload</Text>
+              <Ionicons name="cloud-upload" size={14} color={isDark ? "#F8FAFC" : "#1D4ED8"} style={{ marginRight: 4 }} />
+              <Text className="text-xs font-bold text-primary">Upload</Text>
             </TouchableOpacity>
           </View>
 
           {records.length === 0 ? (
-            <View className="items-center py-6 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
-              <Ionicons name="folder-open-outline" size={32} color="#94A3B8" className="mb-2" />
-              <Text className="text-slate-400 text-xs font-bold">No documents uploaded yet.</Text>
+            <View className="items-center py-6 bg-background dark:bg-background-dark border border-dashed border-border-color dark:border-border-color-dark rounded-2xl">
+              <Ionicons name="folder-open-outline" size={32} color={isDark ? "#64748B" : "#94A3B8"} className="mb-2" />
+              <Text className="text-text-light dark:text-text-light-dark text-xs font-bold">No documents uploaded yet.</Text>
             </View>
           ) : (
             records.map((rec) => (
               <View
                 key={rec.id}
-                className="flex-row items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-2xl mb-3"
+                className="flex-row items-center justify-between p-3 bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark rounded-2xl mb-3"
               >
                 <View className="flex-row items-center flex-1 pr-3">
                   <View className={`w-9 h-9 rounded-xl items-center justify-center mr-3 ${
-                    rec.type === "pdf" ? "bg-red-50" : "bg-blue-50"
+                    rec.type === "pdf" ? "bg-red-50 dark:bg-red-950/30" : "bg-primary-light dark:bg-primary-light-dark"
                   }`}>
                     <Ionicons
                       name={rec.type === "pdf" ? "document-text" : "image"}
@@ -136,17 +140,17 @@ export default function ProfileScreen() {
                     />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-xs font-bold text-slate-800" numberOfLines={1}>
+                    <Text className="text-xs font-bold text-text-main dark:text-text-main-dark" numberOfLines={1}>
                       {rec.name}
                     </Text>
-                    <Text className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                    <Text className="text-[10px] text-text-light dark:text-text-light-dark font-semibold mt-0.5">
                       {rec.date} • {rec.size}
                     </Text>
                   </View>
                 </View>
                 <TouchableOpacity
                   onPress={() => handleDeleteRecord(rec.id, rec.name)}
-                  className="w-8 h-8 items-center justify-center rounded-full bg-white border border-slate-100"
+                  className="w-8 h-8 items-center justify-center rounded-full bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark"
                 >
                   <Ionicons name="trash-outline" size={14} color="#EF4444" />
                 </TouchableOpacity>
@@ -156,8 +160,8 @@ export default function ProfileScreen() {
         </View>
 
         {/* Settings Menu */}
-        <View className="bg-white border border-slate-100 rounded-3xl p-5 mb-6">
-          <Text className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">Settings & Info</Text>
+        <View className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-6">
+          <Text className="text-xs font-bold text-text-light dark:text-text-light-dark mb-4 uppercase tracking-wider">Settings & Info</Text>
           
           {[
             { icon: "person-outline", title: "Edit Profile", subtitle: "Update details & credentials" },
@@ -168,19 +172,19 @@ export default function ProfileScreen() {
             <TouchableOpacity
               key={index}
               className={`flex-row items-center justify-between py-3 ${
-                index !== 3 ? "border-b border-slate-100 mb-2" : ""
+                index !== 3 ? "border-b border-border-color dark:border-border-color-dark mb-2" : ""
               }`}
             >
               <View className="flex-row items-center">
-                <View className="w-9 h-9 bg-slate-50 border border-slate-100 rounded-xl items-center justify-center mr-3">
-                  <Ionicons name={item.icon as any} size={18} color="#64748B" />
+                <View className="w-9 h-9 bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark rounded-xl items-center justify-center mr-3">
+                  <Ionicons name={item.icon as any} size={18} color={isDark ? "#94A3B8" : "#64748B"} />
                 </View>
                 <View>
-                  <Text className="text-sm font-bold text-slate-800">{item.title}</Text>
-                  <Text className="text-[10px] text-slate-400 font-semibold">{item.subtitle}</Text>
+                  <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">{item.title}</Text>
+                  <Text className="text-[10px] text-text-light dark:text-text-light-dark font-semibold">{item.subtitle}</Text>
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={14} color="#CBD5E1" />
+              <Ionicons name="chevron-forward" size={14} color={isDark ? "#475569" : "#CBD5E1"} />
             </TouchableOpacity>
           ))}
         </View>
@@ -188,7 +192,7 @@ export default function ProfileScreen() {
         {/* Log Out Button */}
         <TouchableOpacity
           onPress={() => router.replace("/auth")}
-          className="border border-red-100 bg-red-50/20 py-4 rounded-3xl items-center justify-center w-full mb-10"
+          className="border border-red-200 dark:border-red-900/50 bg-red-50/20 dark:bg-red-950/20 py-4 rounded-3xl items-center justify-center w-full mb-10"
         >
           <Text className="text-red-500 font-bold text-sm">Log Out</Text>
         </TouchableOpacity>

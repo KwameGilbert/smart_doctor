@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { useColorScheme } from "nativewind";
 import {
   View,
   Text,
@@ -41,6 +42,9 @@ const STARTER_PROMPTS = [
 ];
 
 export default function ChatScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -152,24 +156,24 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface dark:bg-surface-dark" edges={["top"]}>
       {/* Header */}
-      <View className="px-6 pt-2 pb-4 bg-white border-b border-slate-100 flex-row justify-between items-center">
+      <View className="px-6 pt-2 pb-4 bg-surface dark:bg-surface-dark border-b border-border-color dark:border-border-color-dark flex-row justify-between items-center">
         <View className="flex-row items-center">
           <View className="w-10 h-10 bg-blue-500 rounded-2xl items-center justify-center mr-3 relative">
             <Ionicons name="chatbubble-ellipses" size={20} color="#FFFFFF" />
             <View className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-white" />
           </View>
           <View>
-            <Text className="text-base font-extrabold text-slate-900 leading-snug">SmartDoctor AI</Text>
-            <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Medical Assistant</Text>
+            <Text className="text-base font-extrabold text-text-main dark:text-text-main-dark leading-snug">SmartDoctor AI</Text>
+            <Text className="text-[10px] text-text-light dark:text-text-light-dark font-bold uppercase tracking-wide">Medical Assistant</Text>
           </View>
         </View>
         <TouchableOpacity
           onPress={handleClearChat}
-          className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 items-center justify-center"
+          className="w-8 h-8 rounded-full bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark items-center justify-center"
         >
-          <Ionicons name="trash-outline" size={16} color="#64748B" />
+          <Ionicons name="trash-outline" size={16} color={isDark ? "#94A3B8" : "#64748B"} />
         </TouchableOpacity>
       </View>
 
@@ -182,7 +186,7 @@ export default function ChatScreen() {
         <ScrollView
           ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
-          className="flex-1 px-6 bg-slate-50/50"
+          className="flex-1 px-6 bg-background dark:bg-background-dark"
           contentContainerStyle={{ paddingVertical: 20, paddingBottom: 60 }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
@@ -205,8 +209,8 @@ export default function ChatScreen() {
                   <View
                     className={`rounded-[24px] p-4 ${
                       isUser
-                        ? "bg-[#1D4ED8] rounded-tr-none"
-                        : "bg-white border border-slate-100 rounded-tl-none shadow-sm shadow-slate-100/40"
+                        ? "bg-primary rounded-tr-none"
+                        : "bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-tl-none shadow-sm shadow-slate-100/40"
                     }`}
                   >
                     {/* Render Image attachment */}
@@ -219,14 +223,14 @@ export default function ChatScreen() {
                     {/* Render File attachment */}
                     {msg.fileName && (
                       <View className={`flex-row items-center p-3 rounded-2xl mb-2 border ${
-                        isUser ? "bg-blue-600/40 border-blue-400/30" : "bg-red-50/50 border-red-100"
+                        isUser ? "bg-blue-600/40 border-blue-400/30" : "bg-red-50/50 dark:bg-red-950/30 border-red-100 dark:border-red-900/50"
                       }`}>
                         <Ionicons name="document-text" size={24} color={isUser ? "#FFFFFF" : "#EF4444"} />
                         <View className="ml-3 flex-1">
-                          <Text className={`text-xs font-bold ${isUser ? "text-white" : "text-slate-800"}`} numberOfLines={1}>
+                          <Text className={`text-xs font-bold ${isUser ? "text-white" : "text-text-main dark:text-text-main-dark"}`} numberOfLines={1}>
                             {msg.fileName}
                           </Text>
-                          <Text className={`text-[9px] font-semibold mt-0.5 ${isUser ? "text-blue-200" : "text-slate-400"}`}>
+                          <Text className={`text-[9px] font-semibold mt-0.5 ${isUser ? "text-blue-200" : "text-text-light dark:text-text-light-dark"}`}>
                             {msg.fileSize}
                           </Text>
                         </View>
@@ -236,7 +240,7 @@ export default function ChatScreen() {
                     {/* Render Audio voice attachment */}
                     {msg.audioDuration && (
                       <View className={`flex-row items-center py-1.5 px-2 rounded-2xl mb-1 ${
-                        isUser ? "bg-blue-600/40" : "bg-blue-50/50"
+                        isUser ? "bg-blue-600/40" : "bg-primary-light dark:bg-primary-light-dark"
                       }`} style={{ width: 220 }}>
                         <TouchableOpacity className={`w-8 h-8 rounded-full items-center justify-center ${
                           isUser ? "bg-white/20" : "bg-blue-500"
@@ -249,12 +253,12 @@ export default function ChatScreen() {
                           {[2, 3, 5, 2, 4, 3, 5, 4, 2, 5, 3, 2, 4, 5, 3, 2].map((h, i) => (
                             <View
                               key={i}
-                              className={`w-0.5 rounded-full ${isUser ? "bg-white" : "bg-slate-300"}`}
+                              className={`w-0.5 rounded-full ${isUser ? "bg-white" : "bg-text-light dark:bg-text-light-dark"}`}
                               style={{ height: h * 2.5 }}
                             />
                           ))}
                         </View>
-                        <Text className={`text-[10px] font-bold ${isUser ? "text-blue-100" : "text-slate-500"}`}>
+                        <Text className={`text-[10px] font-bold ${isUser ? "text-blue-100" : "text-text-muted dark:text-text-muted-dark"}`}>
                           {msg.audioDuration}
                         </Text>
                       </View>
@@ -264,7 +268,7 @@ export default function ChatScreen() {
                     {msg.text && (
                       <Text
                         className={`text-sm leading-relaxed ${
-                          isUser ? "text-white font-medium" : "text-slate-800"
+                          isUser ? "text-white font-medium" : "text-text-main dark:text-text-main-dark"
                         }`}
                       >
                         {msg.text}
@@ -273,7 +277,7 @@ export default function ChatScreen() {
                   </View>
 
                   <Text
-                    className={`text-[9px] text-slate-400 font-bold mt-1.5 ${
+                    className={`text-[9px] text-text-light dark:text-text-light-dark font-bold mt-1.5 ${
                       isUser ? "text-right" : "text-left"
                     }`}
                   >
@@ -290,11 +294,11 @@ export default function ChatScreen() {
               <View className="w-8 h-8 bg-blue-500 rounded-xl items-center justify-center mr-2 mt-1 shadow-sm">
                 <Ionicons name="chatbubble-ellipses" size={16} color="#FFFFFF" />
               </View>
-              <View className="bg-white border border-slate-100 rounded-3xl rounded-tl-none p-4 shadow-sm shadow-slate-100/40">
+              <View className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl rounded-tl-none p-4 shadow-sm shadow-slate-100/40">
                 <View className="flex-row items-center gap-1.5 py-1 px-2">
-                  <View className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <View className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <View className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <View className="w-2 h-2 bg-text-light dark:bg-text-light-dark rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <View className="w-2 h-2 bg-text-muted dark:bg-text-muted-dark rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <View className="w-2 h-2 bg-text-light dark:bg-text-light-dark rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                 </View>
               </View>
             </View>
@@ -303,18 +307,18 @@ export default function ChatScreen() {
           {/* Starter prompt shortcuts (Shown only when welcome message is the only one) */}
           {messages.length === 1 && !isTyping && (
             <View className="mt-8">
-              <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">Try asking</Text>
+              <Text className="text-xs font-bold text-text-light dark:text-text-light-dark mb-3 uppercase tracking-wider">Try asking</Text>
               <View className="flex-row flex-wrap justify-between gap-3">
                 {STARTER_PROMPTS.map((prompt, idx) => (
                   <TouchableOpacity
                     key={idx}
                     onPress={() => handleStarterPrompt(prompt)}
-                    className="w-[48%] bg-white border border-slate-100 rounded-3xl p-4 shadow-sm shadow-slate-100/30 flex-row items-center"
+                    className="w-[48%] bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-4 shadow-sm shadow-slate-100/30 flex-row items-center"
                   >
-                    <View className="w-8 h-8 bg-blue-50 rounded-xl items-center justify-center mr-3">
+                    <View className="w-8 h-8 bg-primary-light dark:bg-primary-light-dark rounded-xl items-center justify-center mr-3">
                       <Ionicons name={prompt.icon as any} size={16} color="#1D4ED8" />
                     </View>
-                    <Text className="text-xs font-bold text-slate-700 flex-1 leading-snug" numberOfLines={2}>
+                    <Text className="text-xs font-bold text-text-main dark:text-text-main-dark flex-1 leading-snug" numberOfLines={2}>
                       {prompt.text}
                     </Text>
                   </TouchableOpacity>
