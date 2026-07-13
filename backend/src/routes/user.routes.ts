@@ -7,6 +7,8 @@ const router = Router();
 // Current authenticated user profile retrieval and updates
 router.get("/profile", authenticate, userController.getProfile);
 router.get("/home", authenticate, userController.getHomeDashboard);
+router.get("/doctors", authenticate, userController.getDoctorsDirectory);
+router.get("/doctors/:id", authenticate, userController.getDoctorDetail);
 router.put("/profile", authenticate, userController.updateProfile);
 
 // Admin-only User Administration endpoints

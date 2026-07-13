@@ -18,6 +18,8 @@ export const API_ENDPOINTS = {
     ME: "/users/me",
     PROFILE: "/users/profile",
     HOME: "/users/home",
+    DIRECTORY: "/users/doctors",
+    DOCTOR_DETAIL: (id: string) => `/users/doctors/${id}`,
     UPDATE: (id: string) => `/users/${id}`,
   },
 

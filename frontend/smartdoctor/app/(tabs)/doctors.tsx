@@ -10,6 +10,7 @@ import {
   UIManager,
   LayoutAnimation,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +18,7 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { ALL_DOCTORS, SPECIALTIES } from "../../constants/data";
 import { useColorScheme } from "nativewind";
+import { userApi } from "../../services/api/user";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -25,11 +27,47 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 
 type SortOption = "None" | "Rating" | "Experience" | "Patients";
 
+const getSpecialtyUiProperties = (name: string) => {
+  const normalized = name.toLowerCase();
+  if (normalized.includes("cardi")) {
+    return { icon: "heart" as const, color: "#EF4444", bg: "#FEF2F2" };
+  }
+  if (normalized.includes("pedia")) {
+    return { icon: "body" as const, color: "#3B82F6", bg: "#EFF6FF" };
+  }
+  if (normalized.includes("derm")) {
+    return { icon: "sparkles" as const, color: "#10B981", bg: "#ECFDF5" };
+  }
+  if (normalized.includes("neur")) {
+    return { icon: "pulse" as const, color: "#8B5CF6", bg: "#F5F3FF" };
+  }
+  if (normalized.includes("orth")) {
+    return { icon: "fitness" as const, color: "#F59E0B", bg: "#FFFBEB" };
+  }
+  if (normalized.includes("ophth")) {
+    return { icon: "eye" as const, color: "#EC4899", bg: "#FDF2F8" };
+  }
+  if (normalized.includes("dent") || normalized.includes("tooth")) {
+    return { icon: "medical" as const, color: "#06B6D4", bg: "#ECFEFF" };
+  }
+  if (normalized.includes("psych") || normalized.includes("mental")) {
+    return { icon: "chatbubbles" as const, color: "#6366F1", bg: "#EEF2FF" };
+  }
+  if (normalized.includes("gastro") || normalized.includes("stomach")) {
+    return { icon: "flask" as const, color: "#14B8A6", bg: "#F0FDF4" };
+  }
+  return { icon: "medkit" as const, color: "#0EA5E9", bg: "#F0F9FF" };
+};
+
 export default function DoctorsScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const params = useLocalSearchParams();
   const routeSpecialty = params.specialty as string;
+
+  const [doctorsList, setDoctorsList] = useState<any[]>(ALL_DOCTORS);
+  const [specialtiesList, setSpecialtiesList] = useState<any[]>(SPECIALTIES);
+  const [loading, setLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("All");
@@ -37,6 +75,27 @@ export default function DoctorsScreen() {
   const [minExperience, setMinExperience] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("None");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+  useEffect(() => {
+    userApi.getDoctorsDirectory()
+      .then((response) => {
+        if (response.status === "success" && response.data) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          if (response.data.doctors) {
+            setDoctorsList(response.data.doctors);
+          }
+          if (response.data.specialties) {
+            setSpecialtiesList(response.data.specialties);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching doctors directory:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   // Sync route specialty parameter when navigated from other pages
   useEffect(() => {
@@ -63,7 +122,7 @@ export default function DoctorsScreen() {
   };
 
   const filteredDoctors = useMemo(() => {
-    let result = ALL_DOCTORS.filter((doc) => {
+    let result = doctorsList.filter((doc) => {
       // Search text match
       const matchesSearch =
         doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -108,7 +167,7 @@ export default function DoctorsScreen() {
     }
 
     return result;
-  }, [searchQuery, selectedSpecialty, minRating, minExperience, sortBy]);
+  }, [doctorsList, searchQuery, selectedSpecialty, minRating, minExperience, sortBy]);
 
   const hasActiveFilters = minRating !== null || minExperience !== null || sortBy !== "None";
 
@@ -175,8 +234,11 @@ export default function DoctorsScreen() {
                 All Specialities
               </Text>
             </TouchableOpacity>
-            {SPECIALTIES.map((spec) => {
+            {specialtiesList.map((spec) => {
               const isSelected = selectedSpecialty.toLowerCase() === spec.name.toLowerCase();
+              const fallbackVisuals = getSpecialtyUiProperties(spec.name);
+              const iconName = spec.icon || fallbackVisuals.icon;
+              const iconColor = isSelected ? "#FFFFFF" : (spec.color || fallbackVisuals.color);
               return (
                 <TouchableOpacity
                   key={spec.id}
@@ -188,9 +250,9 @@ export default function DoctorsScreen() {
                   }`}
                 >
                   <Ionicons
-                    name={spec.icon}
+                    name={iconName as any}
                     size={14}
-                    color={isSelected ? "#FFFFFF" : spec.color}
+                    color={iconColor}
                     style={{ marginRight: 6 }}
                   />
                   <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-text-muted dark:text-text-muted-dark"}`}>
@@ -229,7 +291,14 @@ export default function DoctorsScreen() {
 
         {/* List of Doctors */}
         <View className="px-6 pb-20 mt-2">
-          {filteredDoctors.length === 0 ? (
+          {loading ? (
+            <View className="items-center justify-center py-20 bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-8">
+              <ActivityIndicator size="large" color="#1565C0" />
+              <Text className="text-xs text-text-muted dark:text-text-muted-dark font-semibold mt-4">
+                Loading doctors directory...
+              </Text>
+            </View>
+          ) : filteredDoctors.length === 0 ? (
             <View className="items-center justify-center py-20 bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-8">
               <View className="w-16 h-16 bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark rounded-2xl items-center justify-center mb-4">
                 <Ionicons name="search-outline" size={32} color="#94A3B8" />

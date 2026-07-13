@@ -18,4 +18,20 @@ export const userApi = {
     const response = await apiClient.get(API_ENDPOINTS.USERS.HOME);
     return response.data;
   },
+
+  /**
+   * Fetch doctors directory data (specialties, all approved doctors).
+   */
+  async getDoctorsDirectory(): Promise<ApiResponse<any>> {
+    const response = await apiClient.get(API_ENDPOINTS.USERS.DIRECTORY);
+    return response.data;
+  },
+
+  /**
+   * Fetch details of a single doctor by their ID.
+   */
+  async getDoctorDetail(id: string): Promise<ApiResponse<any>> {
+    const response = await apiClient.get(API_ENDPOINTS.USERS.DOCTOR_DETAIL(id));
+    return response.data;
+  },
 };

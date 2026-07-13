@@ -128,6 +128,129 @@ export const getHomeDashboard = async (req: Request, res: Response, next: NextFu
 };
 
 /**
+ * Get doctors directory data (all approved doctors with their specialties).
+ */
+export const getDoctorsDirectory = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // 1. Fetch specialties
+    const specialties = await db("specialties").select("id", "name", "description", "icon", "color", "bg");
+
+    // 2. Fetch approved doctors
+    const doctors = await db("users")
+      .join("doctors", "users.id", "=", "doctors.id")
+      .where("doctors.status", "APPROVED")
+      .select(
+        "users.id",
+        "users.firstName",
+        "users.lastName",
+        "users.avatarUrl",
+        "doctors.bio",
+        "doctors.consultationFee",
+        "doctors.experienceYears",
+        "doctors.rating",
+        "doctors.licenseNumber",
+        db.raw('(SELECT COUNT(*)::int FROM reviews WHERE reviews."doctorId" = doctors.id) as "reviewsCount"'),
+        db.raw('(SELECT COUNT(DISTINCT "patientId")::int FROM appointments WHERE appointments."doctorId" = doctors.id AND appointments.status = \'COMPLETED\') as "patientsCount"')
+      )
+      .orderBy("doctors.rating", "desc");
+
+    // Fetch specialties map for all doctors
+    const specialtiesMap = await db("doctorSpecialties")
+      .join("specialties", "doctorSpecialties.specialtyId", "=", "specialties.id")
+      .select("doctorSpecialties.doctorId", "specialties.name");
+
+    const docSpecialties: Record<string, string[]> = {};
+    for (const row of specialtiesMap) {
+      if (!docSpecialties[row.doctorId]) {
+        docSpecialties[row.doctorId] = [];
+      }
+      docSpecialties[row.doctorId].push(row.name);
+    }
+
+    const formattedDoctors = doctors.map((doc: any) => ({
+      id: doc.id,
+      name: `Dr. ${doc.firstName} ${doc.lastName}`,
+      specialty: docSpecialties[doc.id]?.join(", ") || "General Medicine",
+      rating: parseFloat(doc.rating) || 0.0,
+      reviews: doc.reviewsCount || 0,
+      image: doc.avatarUrl || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200",
+      experience: `${doc.experienceYears} Years`,
+      patients: doc.patientsCount > 0 ? `+${doc.patientsCount}` : "New",
+      about: doc.bio || "",
+      doctorIdCode: doc.licenseNumber || `DR${doc.id.slice(0, 4).toUpperCase()}`,
+      avgSessionTime: "30 min",
+      prescriptionType: "Online & Offline",
+      contracts: "All Insurance"
+    }));
+
+    return sendSuccess(res, {
+      specialties,
+      doctors: formattedDoctors
+    }, "Doctors directory retrieved successfully.");
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get details for a single approved doctor.
+ */
+export const getDoctorDetail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const doctor = await db("users")
+      .join("doctors", "users.id", "=", "doctors.id")
+      .where("users.id", id)
+      .where("doctors.status", "APPROVED")
+      .select(
+        "users.id",
+        "users.firstName",
+        "users.lastName",
+        "users.avatarUrl",
+        "doctors.bio",
+        "doctors.consultationFee",
+        "doctors.experienceYears",
+        "doctors.rating",
+        "doctors.licenseNumber",
+        db.raw('(SELECT COUNT(*)::int FROM reviews WHERE reviews."doctorId" = doctors.id) as "reviewsCount"'),
+        db.raw('(SELECT COUNT(DISTINCT "patientId")::int FROM appointments WHERE appointments."doctorId" = doctors.id AND appointments.status = \'COMPLETED\') as "patientsCount"')
+      )
+      .first();
+
+    if (!doctor) {
+      return sendNotFound(res, "Doctor not found or not approved.");
+    }
+
+    // Fetch specialties for this doctor
+    const specialties = await db("doctorSpecialties")
+      .join("specialties", "doctorSpecialties.specialtyId", "=", "specialties.id")
+      .where("doctorSpecialties.doctorId", id)
+      .select("specialties.name");
+
+    const formattedDoctor = {
+      id: doctor.id,
+      name: `Dr. ${doctor.firstName} ${doctor.lastName}`,
+      specialty: specialties.map((s: any) => s.name).join(", ") || "General Medicine",
+      rating: parseFloat(doctor.rating) || 0.0,
+      reviews: doctor.reviewsCount || 0,
+      image: doctor.avatarUrl || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200",
+      experience: `${doctor.experienceYears} Years`,
+      patients: doctor.patientsCount > 0 ? `+${doctor.patientsCount}` : "New",
+      about: doctor.bio || "",
+      doctorIdCode: doctor.licenseNumber || `DR${doctor.id.slice(0, 4).toUpperCase()}`,
+      avgSessionTime: "30 min",
+      prescriptionType: "Online & Offline",
+      contracts: "All Insurance"
+    };
+
+    return sendSuccess(res, formattedDoctor, "Doctor details retrieved successfully.");
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
 
  * Update current user's core and role-specific details in a transaction.
  */
