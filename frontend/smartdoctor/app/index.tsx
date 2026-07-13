@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,11 +6,13 @@ import {
   Animated,
   Dimensions,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { HoneycombSvg, DoctorsSvg, SecureRecordsSvg } from "../components/OnboardingSvgs";
+import { tokenStorage } from "../services/api/storage";
 
 const { width } = Dimensions.get("window");
 
@@ -39,9 +41,33 @@ const SLIDES = [
 ];
 
 export default function OnboardingScreen() {
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const scrollX = useRef(new Animated.Value(0)).current;
   const slidesRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    async function checkOnboardingAndAuth() {
+      try {
+        const hasCompletedOnboarding = await tokenStorage.getOnboardingStatus();
+        if (!hasCompletedOnboarding) {
+          setCheckingAuth(false);
+          return;
+        }
+
+        const token = await tokenStorage.getToken();
+        if (token) {
+          router.replace("/home");
+        } else {
+          router.replace("/auth");
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setCheckingAuth(false);
+      }
+    }
+    checkOnboardingAndAuth();
+  }, []);
 
   const viewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems[0]) {
@@ -51,17 +77,27 @@ export default function OnboardingScreen() {
 
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const scrollToNext = () => {
+  const scrollToNext = async () => {
     if (currentIndex < SLIDES.length - 1) {
       slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
+      await tokenStorage.setOnboardingCompleted();
       router.replace("/auth");
     }
   };
 
-  const skipOnboarding = () => {
+  const skipOnboarding = async () => {
+    await tokenStorage.setOnboardingCompleted();
     router.replace("/auth");
   };
+
+  if (checkingAuth) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" color="#1565C0" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">

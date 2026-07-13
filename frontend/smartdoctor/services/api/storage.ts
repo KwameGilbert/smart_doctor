@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 
 const TOKEN_KEY = "auth_token";
+const ONBOARDING_KEY = "has_completed_onboarding";
 
 /**
  * Secure token storage utility wrapping expo-secure-store.
@@ -37,6 +38,30 @@ export const tokenStorage = {
       await SecureStore.deleteItemAsync(TOKEN_KEY);
     } catch (error) {
       console.error("Error removing JWT token from SecureStore:", error);
+    }
+  },
+
+  /**
+   * Retrieve onboarding status.
+   */
+  async getOnboardingStatus(): Promise<boolean> {
+    try {
+      const val = await SecureStore.getItemAsync(ONBOARDING_KEY);
+      return val === "true";
+    } catch (error) {
+      console.error("Error retrieving onboarding status:", error);
+      return false;
+    }
+  },
+
+  /**
+   * Save onboarding completion status.
+   */
+  async setOnboardingCompleted(): Promise<void> {
+    try {
+      await SecureStore.setItemAsync(ONBOARDING_KEY, "true");
+    } catch (error) {
+      console.error("Error saving onboarding status:", error);
     }
   },
 };
