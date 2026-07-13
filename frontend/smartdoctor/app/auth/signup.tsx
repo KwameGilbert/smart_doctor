@@ -27,6 +27,7 @@ export default function SignupScreen() {
     let validationErrors: {
       name?: string;
       email?: string;
+      phone?: string;
       password?: string;
       confirmPassword?: string;
     } = {};

@@ -397,7 +397,7 @@ export default function DoctorChatScreen() {
                   {!isCameraOn && (
                     <View className="absolute items-center">
                       <Ionicons name="videocam-off" size={48} color="#94A3B8" className="mb-2" />
-                      <Text className="text-slate-400 text-xs font-bold">Doctor's camera is off</Text>
+                      <Text className="text-slate-400 text-xs font-bold">{"Doctor's camera is off"}</Text>
                     </View>
                   )}
                   <View className="absolute top-6 left-6 bg-black/40 px-3 py-1.5 rounded-full flex-row items-center border border-white/10">

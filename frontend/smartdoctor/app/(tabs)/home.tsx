@@ -19,6 +19,8 @@ import { Image } from "expo-image";
 import SearchDiscover from "../../components/SearchDiscover";
 import { PullToRefresh } from "../../components/ui/PullToRefresh";
 import Animated, { FadeInUp, FadeOutUp, FadeInLeft, FadeOutLeft, Layout } from "react-native-reanimated";
+import { TOP_DOCTORS, OTHER_DOCTORS, SPECIALTIES } from "../../constants/data";
+import { userApi } from "../../services/api/user";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -34,26 +36,55 @@ const HEALTH_PHRASES = [
   "Ready to consult our AI?",
 ];
 
-import { TOP_DOCTORS, OTHER_DOCTORS, SPECIALTIES } from "../../constants/data";
+const SPECIALTY_MAP: Record<string, { icon: any; color: string; bg: string }> = {
+  cardiology: { icon: "heart", color: "#EF4444", bg: "#FEF2F2" },
+  pediatrics: { icon: "body", color: "#3B82F6", bg: "#EFF6FF" },
+  dermatology: { icon: "sparkles", color: "#10B981", bg: "#ECFDF5" },
+  neurology: { icon: "pulse", color: "#8B5CF6", bg: "#F5F3FF" },
+  "general medicine": { icon: "medical", color: "#06B6D4", bg: "#ECFEFF" },
+};
+
+const getSpecialtyVisuals = (name: string) => {
+  const key = name.toLowerCase();
+  return SPECIALTY_MAP[key] || { icon: "medical", color: "#64748B", bg: "#F1F5F9" };
+};
 
 export default function HomeScreen() {
   const [phrase, setPhrase] = React.useState("");
   const [isSearchFocused, setIsSearchFocused] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [refreshing, setRefreshing] = React.useState(false);
+  const [user, setUser] = React.useState<any>(null);
+  const [topDoctors, setTopDoctors] = React.useState<any[]>(TOP_DOCTORS);
+  const [otherDoctors, setOtherDoctors] = React.useState<any[]>(OTHER_DOCTORS);
+  const [specialties, setSpecialties] = React.useState<any[]>(SPECIALTIES);
   const inputRef = React.useRef<TextInput>(null);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await userApi.getHomeDashboard();
+      if (response.status === "success") {
+        const { user, specialties, topDoctors, otherDoctors } = response.data;
+        setUser(user);
+        if (specialties && specialties.length > 0) setSpecialties(specialties);
+        if (topDoctors && topDoctors.length > 0) setTopDoctors(topDoctors);
+        if (otherDoctors && otherDoctors.length > 0) setOtherDoctors(otherDoctors);
+      }
+    } catch (error) {
+      console.error("Failed to load home dashboard data:", error);
+    }
+  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    // Simulate API request to refresh dashboard information
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    // Select a new random health greeting phrase
+    await fetchDashboardData();
     const randomPhrase = HEALTH_PHRASES[Math.floor(Math.random() * HEALTH_PHRASES.length)];
     setPhrase(randomPhrase);
     setRefreshing(false);
   };
 
   React.useEffect(() => {
+    fetchDashboardData();
     const randomPhrase = HEALTH_PHRASES[Math.floor(Math.random() * HEALTH_PHRASES.length)];
     setPhrase(randomPhrase);
   }, []);
@@ -79,12 +110,22 @@ export default function HomeScreen() {
   };
 
   // Combine lists to filter results
-  const allDoctors = [...TOP_DOCTORS, ...OTHER_DOCTORS];
+  const allDoctors = [...topDoctors, ...otherDoctors];
   const searchResults = allDoctors.filter(
     (doc) =>
       doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.specialty.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const mappedSpecialties = specialties.map((spec) => {
+    const visuals = getSpecialtyVisuals(spec.name);
+    return {
+      ...spec,
+      icon: visuals.icon,
+      color: visuals.color,
+      bg: visuals.bg,
+    };
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
@@ -104,17 +145,17 @@ export default function HomeScreen() {
             <Animated.View
               entering={FadeInUp.duration(160)}
               exiting={FadeOutUp.duration(160)}
-              className="flex-row justify-between items-center mb-8"
+              className="flex-row justify-between items-center mb-4"
             >
               <View className="flex-row items-center flex-1 pr-2">
                 <Image
-                  source={{ uri: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150" }}
+                  source={{ uri: user?.avatarUrl || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150" }}
                   style={{ width: 46, height: 46, borderRadius: 23, marginRight: 12 }}
                   className="border-2 border-white shadow-sm"
                 />
                 <View className="flex-1">
                   <Text className="text-xl font-bold text-slate-900" numberOfLines={1}>
-                    Hello Elton,
+                    {user ? `Hello ${user.firstName},` : "Hello,"}
                   </Text>
                   <Text className="text-slate-500 text-xs font-medium mt-0.5" numberOfLines={1}>
                     {phrase || "How are you feeling today?"}
