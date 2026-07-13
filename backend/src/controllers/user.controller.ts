@@ -7,7 +7,8 @@ import {
   sendSuccess,
   sendBadRequest,
   sendNotFound,
-  sendServerError
+  sendServerError,
+  sendUnauthorized
 } from "../helpers/response.helper";
 import { logAction } from "../services/audit.service";
 
@@ -25,7 +26,7 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
 
     const profile = await UserModel.findFullProfile(userId, role);
     if (!profile) {
-      return sendNotFound(res, "Profile not found.");
+      return sendUnauthorized(res, "Profile not found. Please log in again.");
     }
 
     return sendSuccess(res, profile, "Profile retrieved successfully.");
@@ -49,7 +50,7 @@ export const getHomeDashboard = async (req: Request, res: Response, next: NextFu
     // 1. Fetch user profile
     const profile = await UserModel.findFullProfile(userId, role);
     if (!profile) {
-      return sendNotFound(res, "Profile not found.");
+      return sendUnauthorized(res, "Profile not found. Please log in again.");
     }
 
     // 2. Fetch specialties
