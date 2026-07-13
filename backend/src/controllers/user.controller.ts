@@ -53,7 +53,7 @@ export const getHomeDashboard = async (req: Request, res: Response, next: NextFu
     }
 
     // 2. Fetch specialties
-    const specialties = await db("specialties").select("id", "name", "description");
+    const specialties = await db("specialties").select("id", "name", "description", "icon", "color", "bg");
 
     // 3. Fetch approved doctors
     const doctors = await db("users")

@@ -113,6 +113,13 @@ Accept: application/json
 
 ###
 
+### 10b. Get Patient Home Dashboard Data
+GET {{baseUrl}}/users/home
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
 ### 11. Update Logged-In Patient Profile
 PUT {{baseUrl}}/users/profile
 Authorization: Bearer {{authToken}}

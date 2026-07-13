@@ -25,22 +25,34 @@ export async function seed(knex: Knex): Promise<void> {
     {
       id: specialtyIds.generalMedicine,
       name: "General Medicine",
-      description: "Primary care medical services, health checks, and general consulting."
+      description: "Primary care medical services, health checks, and general consulting.",
+      icon: "medkit",
+      color: "#0EA5E9",
+      bg: "#F0F9FF"
     },
     {
       id: specialtyIds.cardiology,
       name: "Cardiology",
-      description: "Disorders of the heart and the blood vessels."
+      description: "Disorders of the heart and the blood vessels.",
+      icon: "heart",
+      color: "#EF4444",
+      bg: "#FEF2F2"
     },
     {
       id: specialtyIds.pediatrics,
       name: "Pediatrics",
-      description: "Medical care for infants, children, and adolescents."
+      description: "Medical care for infants, children, and adolescents.",
+      icon: "body",
+      color: "#3B82F6",
+      bg: "#EFF6FF"
     },
     {
       id: specialtyIds.dermatology,
       name: "Dermatology",
-      description: "Diagnosis and treatment of skin, hair, and nail disorders."
+      description: "Diagnosis and treatment of skin, hair, and nail disorders.",
+      icon: "sparkles",
+      color: "#10B981",
+      bg: "#ECFDF5"
     }
   ]);
 
