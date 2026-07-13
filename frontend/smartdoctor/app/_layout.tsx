@@ -16,6 +16,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
 import { ThemeProvider, DefaultTheme } from "@react-navigation/native";
 import AnimatedSplash from "../components/AnimatedSplash";
+import { AlertProvider } from "../components/ui/AlertModal";
 
 // Define custom theme variables for the app navigation container
 const AppTheme = {
@@ -63,13 +64,15 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={AppTheme}>
-      <View style={{ flex: 1 }} onLayout={onRootViewLayout}>
-        <Stack screenOptions={{ headerShown: false }} />
+      <AlertProvider>
+        <View style={{ flex: 1 }} onLayout={onRootViewLayout}>
+          <Stack screenOptions={{ headerShown: false }} />
 
-        {showAnimatedSplash && (
-          <AnimatedSplash onFinished={() => setShowAnimatedSplash(false)} />
-        )}
-      </View>
+          {showAnimatedSplash && (
+            <AnimatedSplash onFinished={() => setShowAnimatedSplash(false)} />
+          )}
+        </View>
+      </AlertProvider>
     </ThemeProvider>
   );
 }
