@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import AuthPattern from "../../components/AuthPattern";
+import { authApi } from "../../services/api/auth";
 
 export default function SignupScreen() {
   const [name, setName] = useState("");
@@ -66,11 +67,46 @@ export default function SignupScreen() {
     setErrors({});
     setLoading(true);
 
-    // Mock register/auth success and navigation
-    setTimeout(() => {
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "User";
+
+    authApi.register({
+      email: email.trim(),
+      password,
+      phoneNumber: phone.trim(),
+      firstName,
+      lastName,
+      role: "PATIENT",
+    })
+    .then((response) => {
       setLoading(false);
-      router.replace("/home");
-    }, 1500);
+      if (response.status === "success") {
+        Alert.alert(
+          "Registration Successful",
+          "A verification code has been sent to your email.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                router.replace({
+                  pathname: "/auth/verify",
+                  params: { email: email.trim() },
+                });
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert("Registration Failed", response.message || "Could not register account.");
+      }
+    })
+    .catch((error) => {
+      setLoading(false);
+      console.error("Signup error:", error);
+      const serverMessage = error.response?.data?.message || "Something went wrong. Please check your connection.";
+      Alert.alert("Signup Error", serverMessage);
+    });
   };
 
   return (
