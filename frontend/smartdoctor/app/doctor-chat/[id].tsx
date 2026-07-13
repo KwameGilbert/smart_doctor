@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useColorScheme } from "nativewind";
 import {
   View,
   Text,
@@ -36,6 +37,9 @@ interface Message {
 }
 
 export default function DoctorChatScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const { id } = useLocalSearchParams();
   const doctor = ALL_DOCTORS.find((d) => d.id === id) || ALL_DOCTORS[0];
 
@@ -180,15 +184,15 @@ export default function DoctorChatScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface dark:bg-surface-dark" edges={["top"]}>
       {/* Chat Header */}
-      <View className="px-6 pt-2 pb-4 bg-white border-b border-slate-100 flex-row justify-between items-center">
+      <View className="px-6 pt-2 pb-4 bg-surface dark:bg-surface-dark border-b border-border-color dark:border-border-color-dark flex-row justify-between items-center">
         <View className="flex-row items-center flex-1 pr-2">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="w-9 h-9 items-center justify-center rounded-full bg-slate-50 border border-slate-100 mr-2"
+            className="w-9 h-9 items-center justify-center rounded-full bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark mr-2"
           >
-            <Ionicons name="chevron-back" size={20} color="#1E293B" />
+            <Ionicons name="chevron-back" size={20} color={isDark ? "#F8FAFC" : "#1E293B"} />
           </TouchableOpacity>
           
           <View className="relative">
@@ -201,10 +205,10 @@ export default function DoctorChatScreen() {
           </View>
 
           <View className="ml-3 flex-1">
-            <Text className="text-sm font-bold text-slate-800 leading-snug" numberOfLines={1}>
+            <Text className="text-sm font-bold text-text-main dark:text-text-main-dark leading-snug" numberOfLines={1}>
               {doctor.name}
             </Text>
-            <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-wider" numberOfLines={1}>
+            <Text className="text-[10px] text-text-light dark:text-text-light-dark font-bold uppercase tracking-wider" numberOfLines={1}>
               {doctor.specialty}
             </Text>
           </View>
@@ -214,15 +218,15 @@ export default function DoctorChatScreen() {
         <View className="flex-row gap-2">
           <TouchableOpacity
             onPress={() => handleStartCall("audio")}
-            className="w-9 h-9 items-center justify-center rounded-full bg-slate-50 border border-slate-100"
+            className="w-9 h-9 items-center justify-center rounded-full bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark"
           >
-            <Ionicons name="call-outline" size={18} color="#1565C0" />
+            <Ionicons name="call-outline" size={18} color={isDark ? "#60A5FA" : "#1565C0"} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleStartCall("video")}
-            className="w-9 h-9 items-center justify-center rounded-full bg-slate-50 border border-slate-100"
+            className="w-9 h-9 items-center justify-center rounded-full bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark"
           >
-            <Ionicons name="videocam-outline" size={18} color="#1565C0" />
+            <Ionicons name="videocam-outline" size={18} color={isDark ? "#60A5FA" : "#1565C0"} />
           </TouchableOpacity>
         </View>
       </View>
@@ -236,7 +240,7 @@ export default function DoctorChatScreen() {
         <ScrollView
           ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
-          className="flex-1 px-6 bg-slate-50/50"
+          className="flex-1 px-6 bg-background dark:bg-background-dark"
           contentContainerStyle={{ paddingVertical: 20, paddingBottom: 60 }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
@@ -260,8 +264,8 @@ export default function DoctorChatScreen() {
                   <View
                     className={`rounded-[24px] p-4 ${
                       isUser
-                        ? "bg-[#1D4ED8] rounded-tr-none"
-                        : "bg-white border border-slate-100 rounded-tl-none shadow-sm shadow-slate-100/40"
+                        ? "bg-primary rounded-tr-none"
+                        : "bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-tl-none shadow-sm shadow-slate-100/40"
                     }`}
                   >
                     {/* Render Image attachment */}
@@ -274,14 +278,14 @@ export default function DoctorChatScreen() {
                     {/* Render File attachment */}
                     {msg.fileName && (
                       <View className={`flex-row items-center p-3 rounded-2xl mb-2 border ${
-                        isUser ? "bg-blue-600/40 border-blue-400/30" : "bg-red-50/50 border-red-100"
+                        isUser ? "bg-blue-600/40 border-blue-400/30" : "bg-red-50/50 dark:bg-red-950/30 border-red-100 dark:border-red-900/50"
                       }`}>
                         <Ionicons name="document-text" size={24} color={isUser ? "#FFFFFF" : "#EF4444"} />
                         <View className="ml-3 flex-1">
-                          <Text className={`text-xs font-bold ${isUser ? "text-white" : "text-slate-800"}`} numberOfLines={1}>
+                          <Text className={`text-xs font-bold ${isUser ? "text-white" : "text-text-main dark:text-text-main-dark"}`} numberOfLines={1}>
                             {msg.fileName}
                           </Text>
-                          <Text className={`text-[9px] font-semibold mt-0.5 ${isUser ? "text-blue-200" : "text-slate-400"}`}>
+                          <Text className={`text-[9px] font-semibold mt-0.5 ${isUser ? "text-blue-200" : "text-text-light dark:text-text-light-dark"}`}>
                             {msg.fileSize}
                           </Text>
                         </View>
@@ -291,7 +295,7 @@ export default function DoctorChatScreen() {
                     {/* Render Audio attachment */}
                     {msg.audioDuration && (
                       <View className={`flex-row items-center py-1.5 px-2 rounded-2xl mb-1 ${
-                        isUser ? "bg-blue-600/40" : "bg-blue-50/50"
+                        isUser ? "bg-blue-600/40" : "bg-primary-light dark:bg-primary-light-dark"
                       }`} style={{ width: 220 }}>
                         <TouchableOpacity className={`w-8 h-8 rounded-full items-center justify-center ${
                           isUser ? "bg-white/20" : "bg-blue-500"
@@ -303,12 +307,12 @@ export default function DoctorChatScreen() {
                           {[3, 2, 5, 3, 4, 3, 2, 4, 3, 5, 2, 3, 4, 2, 3, 4].map((h, i) => (
                             <View
                               key={i}
-                              className={`w-0.5 rounded-full ${isUser ? "bg-white" : "bg-slate-300"}`}
+                              className={`w-0.5 rounded-full ${isUser ? "bg-white" : "bg-text-light dark:bg-text-light-dark"}`}
                               style={{ height: h * 2.5 }}
                             />
                           ))}
                         </View>
-                        <Text className={`text-[10px] font-bold ${isUser ? "text-blue-100" : "text-slate-500"}`}>
+                        <Text className={`text-[10px] font-bold ${isUser ? "text-blue-100" : "text-text-muted dark:text-text-muted-dark"}`}>
                           {msg.audioDuration}
                         </Text>
                       </View>
@@ -318,7 +322,7 @@ export default function DoctorChatScreen() {
                     {msg.text && (
                       <Text
                         className={`text-sm leading-relaxed ${
-                          isUser ? "text-white font-medium" : "text-slate-800"
+                          isUser ? "text-white font-medium" : "text-text-main dark:text-text-main-dark"
                         }`}
                       >
                         {msg.text}
@@ -327,7 +331,7 @@ export default function DoctorChatScreen() {
                   </View>
 
                   <Text
-                    className={`text-[9px] text-slate-400 font-bold mt-1.5 ${
+                    className={`text-[9px] text-text-light dark:text-text-light-dark font-bold mt-1.5 ${
                       isUser ? "text-right" : "text-left"
                     }`}
                   >
@@ -346,11 +350,11 @@ export default function DoctorChatScreen() {
                 style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8, marginTop: 2 }}
                 contentFit="cover"
               />
-              <View className="bg-white border border-slate-100 rounded-3xl rounded-tl-none p-4 shadow-sm shadow-slate-100/40">
+              <View className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl rounded-tl-none p-4 shadow-sm shadow-slate-100/40">
                 <View className="flex-row items-center gap-1.5 py-1 px-2">
-                  <View className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" />
-                  <View className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
-                  <View className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" />
+                  <View className="w-2 h-2 bg-text-light dark:bg-text-light-dark rounded-full animate-bounce" />
+                  <View className="w-2 h-2 bg-text-muted dark:bg-text-muted-dark rounded-full animate-bounce" />
+                  <View className="w-2 h-2 bg-text-light dark:bg-text-light-dark rounded-full animate-bounce" />
                 </View>
               </View>
             </View>

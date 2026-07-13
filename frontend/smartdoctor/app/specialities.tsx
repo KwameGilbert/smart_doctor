@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useColorScheme } from "nativewind";
 import { View, Text, TouchableOpacity, FlatList, TextInput, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,6 +54,9 @@ const getSpecialtyUiProperties = (name: string) => {
 };
 
 export default function SpecialitiesScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const [search, setSearch] = useState("");
   const [specialties, setSpecialties] = useState<SpecialtyItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,33 +94,33 @@ export default function SpecialitiesScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-app-bg" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background dark:bg-background-dark" edges={["top", "bottom"]}>
       {/* Header */}
-      <View className="flex-row items-center px-6 py-4 bg-white border-b border-slate-100">
+      <View className="flex-row items-center px-6 py-4 bg-surface dark:bg-surface-dark border-b border-border-color dark:border-border-color-dark">
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-10 h-10 items-center justify-center rounded-full bg-slate-50 border border-slate-100 mr-3"
+          className="w-10 h-10 items-center justify-center rounded-full bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark mr-3"
         >
-          <Ionicons name="chevron-back" size={22} color="#1E293B" />
+          <Ionicons name="chevron-back" size={22} color={isDark ? "#F8FAFC" : "#1E293B"} />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-slate-900">All Specialities</Text>
+        <Text className="text-xl font-bold text-text-main dark:text-text-main-dark">All Specialities</Text>
       </View>
 
       {/* Search Input */}
-      <View className="px-6 py-4 bg-white border-b border-slate-100">
-        <View className="flex-row items-center bg-slate-50 px-4 py-3 rounded-2xl border border-slate-100 shadow-sm">
-          <Ionicons name="search-outline" size={20} color="#94A3B8" style={{ marginRight: 8 }} />
+      <View className="px-6 py-4 bg-surface dark:bg-surface-dark border-b border-border-color dark:border-border-color-dark">
+        <View className="flex-row items-center bg-background dark:bg-background-dark px-4 py-3 rounded-2xl border border-border-color dark:border-border-color-dark shadow-sm">
+          <Ionicons name="search-outline" size={20} color={isDark ? "#64748B" : "#94A3B8"} style={{ marginRight: 8 }} />
           <TextInput
             placeholder="Search specialities..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
             value={search}
             onChangeText={setSearch}
-            className="flex-1 text-slate-800 text-sm font-medium"
+            className="flex-1 text-text-main dark:text-text-main-dark text-sm font-medium"
             style={{ padding: 0 }}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch("")}>
-              <Ionicons name="close-circle" size={18} color="#94A3B8" />
+              <Ionicons name="close-circle" size={18} color={isDark ? "#64748B" : "#94A3B8"} />
             </TouchableOpacity>
           )}
         </View>
@@ -125,17 +129,17 @@ export default function SpecialitiesScreen() {
       {/* Grid List */}
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#1565C0" />
+          <ActivityIndicator size="large" color={isDark ? "#60A5FA" : "#1565C0"} />
         </View>
       ) : filteredSpecialties.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
-          <View className="w-16 h-16 bg-white rounded-2xl items-center justify-center mb-4 shadow-sm border border-slate-100">
-            <Ionicons name="alert-circle-outline" size={32} color="#94A3B8" />
+          <View className="w-16 h-16 bg-surface dark:bg-surface-dark rounded-2xl items-center justify-center mb-4 shadow-sm border border-border-color dark:border-border-color-dark">
+            <Ionicons name="alert-circle-outline" size={32} color={isDark ? "#64748B" : "#94A3B8"} />
           </View>
-          <Text className="text-lg font-bold text-slate-800 text-center mb-1">
+          <Text className="text-lg font-bold text-text-main dark:text-text-main-dark text-center mb-1">
             No Specialities Found
           </Text>
-          <Text className="text-sm text-slate-500 text-center">
+          <Text className="text-sm text-text-muted dark:text-text-muted-dark text-center">
             {"We couldn't find matches for \"" + search + "\". Try another term."}
           </Text>
         </View>
@@ -150,19 +154,19 @@ export default function SpecialitiesScreen() {
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={() => router.push({ pathname: "/(tabs)/doctors", params: { specialty: item.name } })}
-              className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm items-center mb-4"
+              className="bg-surface dark:bg-surface-dark p-5 rounded-3xl border border-border-color dark:border-border-color-dark shadow-sm items-center mb-4"
               style={{ width: "48%" }}
             >
               <View
-                style={{ backgroundColor: item.bg }}
+                style={{ backgroundColor: isDark ? (item.color + "1A") : item.bg }}
                 className="w-14 h-14 rounded-2xl items-center justify-center mb-3 shadow-sm"
               >
                 <Ionicons name={item.icon} size={26} color={item.color} />
               </View>
-              <Text className="text-sm font-bold text-slate-800 text-center mb-1" numberOfLines={1}>
+              <Text className="text-sm font-bold text-text-main dark:text-text-main-dark text-center mb-1" numberOfLines={1}>
                 {item.name}
               </Text>
-              <Text className="text-xs text-[#1565C0] font-bold text-center">
+              <Text className="text-xs text-primary font-bold text-center">
                 Consult Now
               </Text>
             </TouchableOpacity>

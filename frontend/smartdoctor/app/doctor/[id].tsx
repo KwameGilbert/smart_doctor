@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useColorScheme } from "nativewind";
 import {
   View,
   Text,
@@ -23,6 +24,9 @@ const TABS = ["About", "Reviews", "Experience", "Education"];
 import { ALL_DOCTORS } from "../../constants/data";
 
 export default function DoctorDetailsScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const { id } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState("About");
 
@@ -34,25 +38,25 @@ export default function DoctorDetailsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-surface dark:bg-surface-dark">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Top Header Section */}
-        <View className="bg-[#EBF3FF] pt-12 px-6 pb-6" style={{ borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}>
+        <View className="bg-primary-light dark:bg-primary-light-dark pt-12 px-6 pb-6" style={{ borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}>
           <SafeAreaView edges={["top"]} style={{ marginBottom: -30 }} />
           
           <TouchableOpacity 
             onPress={() => router.back()} 
             className="w-10 h-10 items-center justify-center -ml-2 mb-4"
           >
-            <Ionicons name="chevron-back" size={24} color="#1E293B" />
+            <Ionicons name="chevron-back" size={24} color={isDark ? "#F8FAFC" : "#1E293B"} />
           </TouchableOpacity>
 
           <View className="flex-row justify-between">
             <View className="flex-1 pr-4 mt-2">
-              <Text className="text-2xl font-bold text-slate-900 mb-2">
+              <Text className="text-2xl font-bold text-text-main dark:text-text-main-dark mb-2">
                 {doctor.name}
               </Text>
-              <Text className="text-sm font-bold text-[#1D4ED8]">
+              <Text className="text-sm font-bold text-primary">
                 {doctor.specialty}
               </Text>
             </View>
@@ -69,25 +73,25 @@ export default function DoctorDetailsScreen() {
         {/* Stats Section */}
         <View className="flex-row justify-between px-8 py-6">
           <View className="items-center">
-            <View className="w-12 h-12 bg-blue-50 rounded-full items-center justify-center mb-2">
-              <Ionicons name="briefcase-outline" size={20} color="#3B82F6" />
+            <View className="w-12 h-12 bg-primary-light dark:bg-primary-light-dark rounded-full items-center justify-center mb-2">
+              <Ionicons name="briefcase-outline" size={20} color={isDark ? "#60A5FA" : "#3B82F6"} />
             </View>
-            <Text className="text-sm font-bold text-slate-800">{doctor.experience}</Text>
-            <Text className="text-xs text-slate-500">Experience</Text>
+            <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">{doctor.experience}</Text>
+            <Text className="text-xs text-text-muted dark:text-text-muted-dark">Experience</Text>
           </View>
           <View className="items-center">
-            <View className="w-12 h-12 bg-blue-50 rounded-full items-center justify-center mb-2">
-              <Ionicons name="people-outline" size={20} color="#3B82F6" />
+            <View className="w-12 h-12 bg-primary-light dark:bg-primary-light-dark rounded-full items-center justify-center mb-2">
+              <Ionicons name="people-outline" size={20} color={isDark ? "#60A5FA" : "#3B82F6"} />
             </View>
-            <Text className="text-sm font-bold text-slate-800">{doctor.patients}</Text>
-            <Text className="text-xs text-slate-500">Patients</Text>
+            <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">{doctor.patients}</Text>
+            <Text className="text-xs text-text-muted dark:text-text-muted-dark">Patients</Text>
           </View>
           <View className="items-center">
-            <View className="w-12 h-12 bg-blue-50 rounded-full items-center justify-center mb-2">
-              <Ionicons name="star-outline" size={20} color="#3B82F6" />
+            <View className="w-12 h-12 bg-primary-light dark:bg-primary-light-dark rounded-full items-center justify-center mb-2">
+              <Ionicons name="star-outline" size={20} color={isDark ? "#60A5FA" : "#3B82F6"} />
             </View>
-            <Text className="text-sm font-bold text-slate-800">{doctor.rating}</Text>
-            <Text className="text-xs text-slate-500">Rating</Text>
+            <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">{doctor.rating}</Text>
+            <Text className="text-xs text-text-muted dark:text-text-muted-dark">Rating</Text>
           </View>
         </View>
 
@@ -104,9 +108,9 @@ export default function DoctorDetailsScreen() {
               <TouchableOpacity
                 key={tab}
                 onPress={() => handleTabPress(tab)}
-                className={`px-6 py-2.5 rounded-full border ${isActive ? 'bg-[#1D4ED8] border-[#1D4ED8]' : 'bg-white border-slate-200'}`}
+                className={`px-6 py-2.5 rounded-full border ${isActive ? 'bg-primary border-primary' : 'bg-surface dark:bg-surface-dark border-border-color dark:border-border-color-dark'}`}
               >
-                <Text className={`text-sm font-bold ${isActive ? 'text-white' : 'text-slate-700'}`}>
+                <Text className={`text-sm font-bold ${isActive ? 'text-white' : 'text-text-main dark:text-text-main-dark'}`}>
                   {tab}
                 </Text>
               </TouchableOpacity>
@@ -117,42 +121,42 @@ export default function DoctorDetailsScreen() {
         {/* Tab Content */}
         {activeTab === "About" && (
           <View className="px-6 animate-fade-in">
-            <Text className="text-sm text-slate-600 leading-relaxed mb-6">
-              {doctor.about} <Text className="text-[#1D4ED8] font-bold">More</Text>
+            <Text className="text-sm text-text-muted dark:text-text-muted-dark leading-relaxed mb-6">
+              {doctor.about} <Text className="text-primary font-bold">More</Text>
             </Text>
 
             {/* Info Cards Grid */}
             <View className="flex-row flex-wrap justify-between">
-              <View className="w-[48%] bg-[#F1F5F9] p-4 rounded-2xl mb-4">
-                <Text className="text-xs text-slate-500 mb-1">Doctor ID Code</Text>
-                <Text className="text-sm font-bold text-slate-800">{doctor.doctorIdCode}</Text>
+              <View className="w-[48%] bg-background dark:bg-background-dark p-4 rounded-2xl mb-4">
+                <Text className="text-xs text-text-muted dark:text-text-muted-dark mb-1">Doctor ID Code</Text>
+                <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">{doctor.doctorIdCode}</Text>
               </View>
-              <View className="w-[48%] bg-[#F1F5F9] p-4 rounded-2xl mb-4">
-                <Text className="text-xs text-slate-500 mb-1">Avg Session Time</Text>
-                <Text className="text-sm font-bold text-slate-800">{doctor.avgSessionTime}</Text>
+              <View className="w-[48%] bg-background dark:bg-background-dark p-4 rounded-2xl mb-4">
+                <Text className="text-xs text-text-muted dark:text-text-muted-dark mb-1">Avg Session Time</Text>
+                <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">{doctor.avgSessionTime}</Text>
               </View>
-              <View className="w-[48%] bg-[#F1F5F9] p-4 rounded-2xl mb-4">
-                <Text className="text-xs text-slate-500 mb-1">Prescription Type</Text>
-                <Text className="text-sm font-bold text-slate-800">{doctor.prescriptionType}</Text>
+              <View className="w-[48%] bg-background dark:bg-background-dark p-4 rounded-2xl mb-4">
+                <Text className="text-xs text-text-muted dark:text-text-muted-dark mb-1">Prescription Type</Text>
+                <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">{doctor.prescriptionType}</Text>
               </View>
-              <View className="w-[48%] bg-[#F1F5F9] p-4 rounded-2xl mb-4">
-                <Text className="text-xs text-slate-500 mb-1">Contracts</Text>
-                <Text className="text-sm font-bold text-slate-800">{doctor.contracts}</Text>
+              <View className="w-[48%] bg-background dark:bg-background-dark p-4 rounded-2xl mb-4">
+                <Text className="text-xs text-text-muted dark:text-text-muted-dark mb-1">Contracts</Text>
+                <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">{doctor.contracts}</Text>
               </View>
             </View>
 
             {/* User Reviews Header */}
             <View className="flex-row justify-between items-center mt-4 mb-4">
-              <Text className="text-base font-bold text-slate-900">User Reviews</Text>
+              <Text className="text-base font-bold text-text-main dark:text-text-main-dark">User Reviews</Text>
               <TouchableOpacity onPress={() => handleTabPress("Reviews")} className="flex-row items-center">
-                <Text className="text-xs font-bold text-[#1D4ED8] mr-1">View More</Text>
+                <Text className="text-xs font-bold text-primary mr-1">View More</Text>
                 <Ionicons name="chevron-forward" size={12} color="#1D4ED8" />
               </TouchableOpacity>
             </View>
 
             {/* Review Cards */}
             {doctor.reviewsList.slice(0, 2).map((review) => (
-              <View key={review.id} className="bg-white border border-slate-100 rounded-3xl p-5 mb-4 shadow-sm shadow-slate-100/50">
+              <View key={review.id} className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-4 shadow-sm shadow-slate-100/50">
                 <View className="flex-row justify-between items-start mb-3">
                   <Image
                     source={{ uri: review.image }}
@@ -164,19 +168,19 @@ export default function DoctorDetailsScreen() {
                         key={star}
                         name="star"
                         size={14}
-                        color={star <= review.rating ? "#FBBF24" : "#E2E8F0"}
+                        color={star <= review.rating ? "#FBBF24" : (isDark ? "#334155" : "#E2E8F0")}
                         style={{ marginLeft: 2 }}
                       />
                     ))}
                   </View>
                 </View>
-                <Text className="text-sm text-slate-700 leading-relaxed mb-4">
+                <Text className="text-sm text-text-muted dark:text-text-muted-dark leading-relaxed mb-4">
                   {review.text}
                 </Text>
-                <Text className="text-sm font-bold text-slate-900">
+                <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">
                   {review.name}
                 </Text>
-                <Text className="text-xs text-slate-400 mt-1">
+                <Text className="text-xs text-text-light dark:text-text-light-dark mt-1">
                   {review.date}
                 </Text>
               </View>
@@ -187,21 +191,21 @@ export default function DoctorDetailsScreen() {
         {activeTab === "Reviews" && (
           <View className="px-6 animate-fade-in">
             {/* Reviews Summary Card */}
-            <View className="bg-slate-50 border border-slate-100 rounded-3xl p-5 mb-6 flex-row justify-between items-center">
-              <View className="items-center justify-center w-[35%] border-r border-slate-200 pr-4">
-                <Text className="text-4xl font-extrabold text-slate-900">{doctor.rating}</Text>
+            <View className="bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-6 flex-row justify-between items-center">
+              <View className="items-center justify-center w-[35%] border-r border-border-color dark:border-border-color-dark pr-4">
+                <Text className="text-4xl font-extrabold text-text-main dark:text-text-main-dark">{doctor.rating}</Text>
                 <View className="flex-row my-1.5">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Ionicons
                       key={star}
                       name="star"
                       size={12}
-                      color={star <= Math.round(doctor.rating) ? "#FBBF24" : "#E2E8F0"}
+                      color={star <= Math.round(doctor.rating) ? "#FBBF24" : (isDark ? "#334155" : "#E2E8F0")}
                       style={{ marginHorizontal: 1 }}
                     />
                   ))}
                 </View>
-                <Text className="text-[10px] text-slate-500 font-bold">{doctor.reviews} Reviews</Text>
+                <Text className="text-[10px] text-text-muted dark:text-text-muted-dark font-bold">{doctor.reviews} Reviews</Text>
               </View>
 
               <View className="w-[60%] pl-2">
@@ -213,11 +217,11 @@ export default function DoctorDetailsScreen() {
                   { star: 1, pct: "1%" },
                 ].map((row) => (
                   <View key={row.star} className="flex-row items-center mb-1">
-                    <Text className="text-[10px] text-slate-500 font-bold w-3 mr-2">{row.star}</Text>
-                    <View className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <Text className="text-[10px] text-text-muted dark:text-text-muted-dark font-bold w-3 mr-2">{row.star}</Text>
+                    <View className="flex-1 h-1.5 bg-border-color dark:bg-border-color-dark rounded-full overflow-hidden">
                       <View className="h-full bg-[#FBBF24] rounded-full" style={{ width: row.pct as any }} />
                     </View>
-                    <Text className="text-[9px] text-slate-400 font-bold w-7 text-right ml-2">{row.pct}</Text>
+                    <Text className="text-[9px] text-text-light dark:text-text-light-dark font-bold w-7 text-right ml-2">{row.pct}</Text>
                   </View>
                 ))}
               </View>
@@ -225,7 +229,7 @@ export default function DoctorDetailsScreen() {
 
             {/* Review Cards */}
             {doctor.reviewsList.map((review) => (
-              <View key={review.id} className="bg-white border border-slate-100 rounded-3xl p-5 mb-4 shadow-sm shadow-slate-100/50">
+              <View key={review.id} className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-4 shadow-sm shadow-slate-100/50">
                 <View className="flex-row justify-between items-start mb-3">
                   <Image
                     source={{ uri: review.image }}
@@ -237,19 +241,19 @@ export default function DoctorDetailsScreen() {
                         key={star}
                         name="star"
                         size={14}
-                        color={star <= review.rating ? "#FBBF24" : "#E2E8F0"}
+                        color={star <= review.rating ? "#FBBF24" : (isDark ? "#334155" : "#E2E8F0")}
                         style={{ marginLeft: 2 }}
                       />
                     ))}
                   </View>
                 </View>
-                <Text className="text-sm text-slate-700 leading-relaxed mb-4">
+                <Text className="text-sm text-text-muted dark:text-text-muted-dark leading-relaxed mb-4">
                   {review.text}
                 </Text>
-                <Text className="text-sm font-bold text-slate-900">
+                <Text className="text-sm font-bold text-text-main dark:text-text-main-dark">
                   {review.name}
                 </Text>
-                <Text className="text-xs text-slate-400 mt-1">
+                <Text className="text-xs text-text-light dark:text-text-light-dark mt-1">
                   {review.date}
                 </Text>
               </View>
@@ -260,25 +264,25 @@ export default function DoctorDetailsScreen() {
         {activeTab === "Experience" && (
           <View className="px-6 animate-fade-in">
             {doctor.experienceList && doctor.experienceList.length > 0 ? (
-              <View className="pl-4 border-l border-blue-100 ml-2 py-1">
+              <View className="pl-4 border-l border-border-color dark:border-border-color-dark ml-2 py-1">
                 {doctor.experienceList.map((exp, index) => (
                   <View key={index} className="mb-6 relative">
                     {/* Timeline dot */}
                     <View 
-                      className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-white border-2 border-[#1D4ED8]"
+                      className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-surface dark:bg-surface-dark border-2 border-primary"
                       style={{ shadowColor: "#1D4ED8", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1 }}
                     />
                     
-                    <Text className="text-[11px] font-bold text-[#1D4ED8] mb-0.5">
+                    <Text className="text-[11px] font-bold text-primary mb-0.5">
                       {exp.period}
                     </Text>
-                    <Text className="text-base font-bold text-slate-900 mb-0.5">
+                    <Text className="text-base font-bold text-text-main dark:text-text-main-dark mb-0.5">
                       {exp.role}
                     </Text>
-                    <Text className="text-xs font-semibold text-slate-500 mb-2">
+                    <Text className="text-xs font-semibold text-text-muted dark:text-text-muted-dark mb-2">
                       {exp.hospital}
                     </Text>
-                    <Text className="text-xs text-slate-600 leading-relaxed">
+                    <Text className="text-xs text-text-muted dark:text-text-muted-dark leading-relaxed">
                       {exp.description}
                     </Text>
                   </View>
@@ -286,8 +290,8 @@ export default function DoctorDetailsScreen() {
               </View>
             ) : (
               <View className="items-center py-10">
-                <Ionicons name="briefcase-outline" size={48} color="#94A3B8" className="mb-2" />
-                <Text className="text-slate-500 text-sm">No experience details listed.</Text>
+                <Ionicons name="briefcase-outline" size={48} color={isDark ? "#64748B" : "#94A3B8"} className="mb-2" />
+                <Text className="text-text-muted dark:text-text-muted-dark text-sm">No experience details listed.</Text>
               </View>
             )}
           </View>
@@ -298,18 +302,18 @@ export default function DoctorDetailsScreen() {
             {doctor.educationList && doctor.educationList.length > 0 ? (
               <View>
                 {doctor.educationList.map((edu, index) => (
-                  <View key={index} className="bg-slate-50 border border-slate-100 rounded-3xl p-5 mb-4 flex-row items-center">
-                    <View className="w-10 h-10 bg-blue-50 rounded-2xl items-center justify-center mr-4">
-                      <Ionicons name="school" size={20} color="#1D4ED8" />
+                  <View key={index} className="bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-4 flex-row items-center">
+                    <View className="w-10 h-10 bg-primary-light dark:bg-primary-light-dark rounded-2xl items-center justify-center mr-4">
+                      <Ionicons name="school" size={20} color={isDark ? "#F8FAFC" : "#1D4ED8"} />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-[10px] font-bold text-slate-400 mb-0.5">
+                      <Text className="text-[10px] font-bold text-text-light dark:text-text-light-dark mb-0.5">
                         Graduated {edu.year}
                       </Text>
-                      <Text className="text-sm font-bold text-slate-900 mb-0.5 leading-snug">
+                      <Text className="text-sm font-bold text-text-main dark:text-text-main-dark mb-0.5 leading-snug">
                         {edu.degree}
                       </Text>
-                      <Text className="text-xs font-semibold text-slate-500">
+                      <Text className="text-xs font-semibold text-text-muted dark:text-text-muted-dark">
                         {edu.institution}
                       </Text>
                     </View>
@@ -318,8 +322,8 @@ export default function DoctorDetailsScreen() {
               </View>
             ) : (
               <View className="items-center py-10">
-                <Ionicons name="school-outline" size={48} color="#94A3B8" className="mb-2" />
-                <Text className="text-slate-500 text-sm">No education details listed.</Text>
+                <Ionicons name="school-outline" size={48} color={isDark ? "#64748B" : "#94A3B8"} className="mb-2" />
+                <Text className="text-text-muted dark:text-text-muted-dark text-sm">No education details listed.</Text>
               </View>
             )}
           </View>
@@ -327,10 +331,10 @@ export default function DoctorDetailsScreen() {
       </ScrollView>
 
       {/* Floating Action Button */}
-      <View className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-slate-100 pb-10">
+      <View className="absolute bottom-0 left-0 right-0 p-6 bg-surface dark:bg-surface-dark border-t border-border-color dark:border-border-color-dark pb-10">
         <TouchableOpacity
           onPress={() => router.push({ pathname: "/(tabs)/appointments", params: { doctorId: doctor.id } })}
-          className="bg-[#1D4ED8] py-4 rounded-full items-center shadow-lg shadow-blue-500/30"
+          className="bg-primary py-4 rounded-full items-center shadow-lg shadow-blue-500/30"
         >
           <Text className="text-white font-bold text-base">Continue</Text>
         </TouchableOpacity>
