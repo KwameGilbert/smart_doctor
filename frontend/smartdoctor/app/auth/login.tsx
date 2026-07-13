@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import AuthPattern from "../../components/AuthPattern";
+import { authApi } from "../../services/api/auth";
+import { tokenStorage } from "../../services/api/storage";
 
 export default function LoginScreen() {
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -15,8 +17,7 @@ export default function LoginScreen() {
     {},
   );
 
-  const handleLogin = () => {
-    router.replace("/home"); return; // Dev bypass: directly navigate to home pages
+  const handleLogin = async () => {
     // Basic validation
     let validationErrors: { emailOrPhone?: string; password?: string } = {};
     if (!emailOrPhone) {
@@ -43,11 +44,49 @@ export default function LoginScreen() {
     setErrors({});
     setLoading(true);
 
-    // Mock Login action
-    setTimeout(() => {
+    try {
+      const response = await authApi.login({
+        email: emailOrPhone.trim(),
+        password,
+      });
+
+      if (response.status === "success" && response.data?.token) {
+        // Save the JWT token securely
+        await tokenStorage.saveToken(response.data.token);
+        
+        // Redirect to main home dashboard
+        router.replace("/home");
+      } else if (response.data && response.data.isVerified === false) {
+        Alert.alert(
+          "Verification Required",
+          "Your account is registered but not yet verified. Please verify using the OTP code sent to you.",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+            {
+              text: "Verify Now",
+              onPress: () => {
+                // If there's an OTP verification screen, route there.
+                // We'll pass the emailOrPhone so the verification screen can use it.
+                router.push({
+                  pathname: "/auth/signup", // Signup page might contain registration, but if there's no verification page we can route to signup, or stay on login
+                });
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert("Login Failed", response.message || "Invalid email or password.");
+      }
+    } catch (error: any) {
+      console.error("Login request error:", error);
+      const serverMessage = error.response?.data?.message || "Something went wrong. Please check your connection.";
+      Alert.alert("Login Error", serverMessage);
+    } finally {
       setLoading(false);
-      router.replace("/home"); // Redirection to home tabs
-    }, 1500);
+    }
   };
 
   return (
