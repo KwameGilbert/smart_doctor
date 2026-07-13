@@ -62,12 +62,17 @@ export default function SpecialitiesScreen() {
       try {
         const response = await specialtyApi.list();
         if (response.status === "success") {
-          const items = response.data.map((item) => ({
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            ...getSpecialtyUiProperties(item.name),
-          }));
+          const items = response.data.map((item) => {
+            const visuals = getSpecialtyUiProperties(item.name);
+            return {
+              id: item.id,
+              name: item.name,
+              description: item.description,
+              icon: (item.icon || visuals.icon) as keyof typeof Ionicons.glyphMap,
+              color: item.color || visuals.color,
+              bg: item.bg || visuals.bg,
+            };
+          });
           setSpecialties(items);
         }
       } catch (error) {
@@ -85,7 +90,7 @@ export default function SpecialitiesScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-app-bg" edges={["top", "bottom"]}>
       {/* Header */}
       <View className="flex-row items-center px-6 py-4 bg-white border-b border-slate-100">
         <TouchableOpacity

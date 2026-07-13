@@ -6,6 +6,9 @@ export interface Specialty {
   id: string;
   name: string;
   description?: string;
+  icon?: string | null;
+  color?: string | null;
+  bg?: string | null;
 }
 
 export const specialtyApi = {
