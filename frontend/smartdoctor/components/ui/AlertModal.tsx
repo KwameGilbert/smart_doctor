@@ -155,7 +155,7 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       >
         <Animated.View
           style={[styles.overlay, { opacity: opacityValue }]}
-          className="bg-slate-900/60 dark:bg-black/80"
+          className="bg-slate-900/80 dark:bg-black/80"
         >
           <Animated.View
             style={[
@@ -164,7 +164,7 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 transform: [{ scale: scaleValue }],
               },
             ]}
-            className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark"
+            className="bg-slate-900 dark:bg-surface-dark border border-border-color dark:border-border-color-dark"
           >
             {/* Header Icon */}
             <View className="items-center mb-4 mt-2">
@@ -234,6 +234,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
+    zIndex: 9999,
+    elevation: 9999,
   },
   alertContainer: {
     width: "100%",
@@ -244,7 +246,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 9999,
+    zIndex: 9999,
   },
   buttonRow: {
     flexDirection: "row",
