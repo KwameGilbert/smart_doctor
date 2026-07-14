@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Platform,
   LayoutAnimation,
-  Alert,
   Modal,
   Keyboard,
   ScrollView,
@@ -16,6 +15,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { DUMMY_MEDICAL_RECORDS, MedicalRecord } from "../constants/data";
+import { useAlert } from "./ui/AlertModal";
+import { useColorScheme } from "nativewind";
+import BottomSheet from "./ui/BottomSheet";
 
 interface ChatInputProps {
   placeholder?: string;
@@ -31,7 +33,10 @@ interface ChatInputProps {
 }
 
 export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInputProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const insets = useSafeAreaInsets();
+  const { showAlert } = useAlert();
   const [inputText, setInputText] = useState("");
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
@@ -169,7 +174,7 @@ export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInpu
     <View className="relative z-50">
       {/* Attachment Preview Bar */}
       {(attachedImage || attachedFile || attachedAudio) && (
-        <View className="bg-slate-50 border-t border-slate-100 px-6 py-3.5 flex-row gap-3">
+        <View className="bg-background dark:bg-background-dark border-t border-border-color dark:border-border-color-dark px-6 py-3.5 flex-row gap-3">
           {attachedImage && (
             <View className="relative">
               <Image source={{ uri: attachedImage }} style={{ width: 60, height: 60, borderRadius: 12 }} />
@@ -182,13 +187,13 @@ export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInpu
             </View>
           )}
           {attachedFile && (
-            <View className="bg-white border border-slate-200 px-3.5 py-2.5 rounded-2xl flex-row items-center relative max-w-[220px] shadow-sm">
+            <View className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark px-3.5 py-2.5 rounded-2xl flex-row items-center relative max-w-[220px] shadow-sm">
               <Ionicons name="document-text" size={20} color="#EF4444" />
               <View className="ml-2 mr-3">
-                <Text className="text-xs text-slate-800 font-bold" numberOfLines={1}>
+                <Text className="text-xs text-text-main dark:text-text-main-dark font-bold" numberOfLines={1}>
                   {attachedFile.name}
                 </Text>
-                <Text className="text-[9px] text-slate-400 font-semibold">{attachedFile.size}</Text>
+                <Text className="text-[9px] text-text-muted dark:text-text-muted-dark font-semibold">{attachedFile.size}</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setAttachedFile(null)}
@@ -199,11 +204,11 @@ export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInpu
             </View>
           )}
           {attachedAudio && (
-            <View className="bg-white border border-slate-200 px-3.5 py-2.5 rounded-2xl flex-row items-center relative shadow-sm">
+            <View className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark px-3.5 py-2.5 rounded-2xl flex-row items-center relative shadow-sm">
               <Ionicons name="mic" size={18} color="#1D4ED8" />
               <View className="ml-2 mr-3">
-                <Text className="text-xs text-slate-800 font-bold">{attachedAudio.name}</Text>
-                <Text className="text-[9px] text-slate-400 font-semibold">{attachedAudio.duration}</Text>
+                <Text className="text-xs text-text-main dark:text-text-main-dark font-bold">{attachedAudio.name}</Text>
+                <Text className="text-[9px] text-text-muted dark:text-text-muted-dark font-semibold">{attachedAudio.duration}</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setAttachedAudio(null)}
@@ -222,10 +227,10 @@ export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInpu
           paddingBottom: isKeyboardOpen ? 10 : (isTabScreen ? 10 : Math.max(insets.bottom, 10)),
           paddingTop: 10,
         }}
-        className="px-5 bg-white border-t border-slate-100 flex-row items-center gap-3"
+        className="px-5 bg-surface dark:bg-surface-dark border-t border-border-color dark:border-border-color-dark flex-row items-center gap-3"
       >
         {isRecording ? (
-          <View className="flex-1 bg-red-50/50 border border-red-100 rounded-full px-5 py-3 flex-row items-center justify-between">
+          <View className="flex-1 bg-red-50/50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 rounded-full px-5 py-3 flex-row items-center justify-between">
             <View className="flex-row items-center">
               <View className="w-2.5 h-2.5 bg-red-500 rounded-full mr-2" />
               <Text className="text-xs text-red-600 font-bold">Recording {formatTime(recordingSeconds)}</Text>
@@ -240,26 +245,28 @@ export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInpu
             <TouchableOpacity
               onPress={handleToggleAttachmentMenu}
               className={`w-11 h-11 items-center justify-center rounded-full border ${
-                showAttachmentMenu ? "bg-slate-100 border-slate-200" : "bg-slate-50 border-slate-100"
+                showAttachmentMenu 
+                  ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700" 
+                  : "bg-background dark:bg-background-dark border-border-color dark:border-border-color-dark"
               }`}
             >
               <Ionicons
                 name={showAttachmentMenu ? "close" : "add"}
                 size={22}
-                color={showAttachmentMenu ? "#EF4444" : "#64748B"}
+                color={showAttachmentMenu ? "#EF4444" : (isDark ? "#94A3B8" : "#64748B")}
               />
             </TouchableOpacity>
 
-            <View className="flex-1 bg-slate-100 px-5 py-3 rounded-full border border-slate-200/50 flex-row items-center">
+            <View className="flex-1 bg-background dark:bg-background-dark px-5 py-3 rounded-full border border-border-color dark:border-border-color-dark flex-row items-center">
               <TextInput
                 placeholder={placeholder || "Type a message..."}
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={isDark ? "#64748B" : "#94A3B8"}
                 value={inputText}
                 onChangeText={setInputText}
                 onFocus={handleInputFocus}
                 multiline
                 style={{ padding: 0, maxHeight: 60 }}
-                className="flex-1 text-slate-800 text-sm font-medium"
+                className="flex-1 text-text-main dark:text-text-main-dark text-sm font-medium"
               />
             </View>
           </>
@@ -275,7 +282,7 @@ export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInpu
                 handleStartRecording();
               }
             }}
-            className="w-11 h-11 bg-[#1D4ED8] rounded-full items-center justify-center shadow-md shadow-blue-500/10"
+            className="w-11 h-11 bg-primary rounded-full items-center justify-center shadow-md shadow-blue-500/10"
           >
             <Ionicons
               name={
@@ -294,12 +301,12 @@ export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInpu
       {/* Floating Attachment Options Drawer (WhatsApp Style, overlays keyboard smoothly) */}
       {showAttachmentMenu && (
         <View 
-          className="absolute bottom-20 left-4 right-4 bg-white border border-slate-100 rounded-3xl p-4 shadow-2xl z-50 flex-row flex-wrap justify-between"
+          className="absolute bottom-20 left-4 right-4 bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-4 shadow-2xl z-50 flex-row flex-wrap justify-between"
           style={{
             elevation: 24,
-            shadowColor: "#0F172A",
+            shadowColor: isDark ? "#000" : "#0F172A",
             shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.15,
+            shadowOpacity: isDark ? 0.3 : 0.15,
             shadowRadius: 16,
           }}
         >
@@ -309,7 +316,7 @@ export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInpu
             { icon: "camera", name: "Camera", color: "#FF4B72", action: handleAttachImage },
             { icon: "image", name: "Gallery", color: "#20C997", action: handleAttachImage },
             { icon: "headset", name: "Audio", color: "#FF9F43", action: handleStartRecording },
-            { icon: "location", name: "Location", color: "#00A8FF", action: () => Alert.alert("Location Shared", "Mock location shared successfully!") },
+            { icon: "location", name: "Location", color: "#00A8FF", action: () => showAlert("Location Shared", "Mock location shared successfully!") },
           ].map((item, idx) => (
             <TouchableOpacity key={idx} onPress={item.action} className="items-center w-[30%] my-2.5">
               <View 
@@ -318,77 +325,54 @@ export default function ChatInput({ placeholder, isTabScreen, onSend }: ChatInpu
               >
                 <Ionicons name={item.icon as any} size={22} color="#FFFFFF" />
               </View>
-              <Text className="text-[10px] text-slate-500 font-bold">{item.name}</Text>
+              <Text className="text-[10px] text-text-muted dark:text-text-muted-dark font-bold">{item.name}</Text>
             </TouchableOpacity>
           ))}
         </View>
       )}
 
       {/* Medical Record Selector Modal */}
-      <Modal
+      <BottomSheet
         visible={isRecordModalOpen}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setIsRecordModalOpen(false)}
+        onClose={() => setIsRecordModalOpen(false)}
+        title="Select Medical Record"
       >
-        <View style={styles.modalOverlay}>
-          <View className="bg-white rounded-t-[40px] px-6 pt-6 pb-10 w-full max-h-[75%] absolute bottom-0 shadow-2xl">
-            {/* Modal Header */}
-            <View className="flex-row justify-between items-center mb-6">
-              <View>
-                <Text className="text-lg font-bold text-slate-900">Select Medical Record</Text>
-                <Text className="text-xs text-slate-400 font-medium">Attach a report to send to the chat</Text>
+        <Text className="text-xs text-text-light dark:text-text-light-dark font-medium mb-4">Attach a report to send to the chat</Text>
+        
+        {/* List of files */}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+          {DUMMY_MEDICAL_RECORDS.map((record) => (
+            <TouchableOpacity
+              key={record.id}
+              onPress={() => handleSelectMedicalRecord(record)}
+              className="flex-row items-center justify-between p-3.5 bg-background dark:bg-background-dark border border-border-color dark:border-border-color-dark rounded-2xl mb-3"
+            >
+              <View className="flex-row items-center flex-1 pr-4">
+                <View className={`w-9 h-9 rounded-xl items-center justify-center mr-3 ${
+                  record.type === "pdf" ? "bg-red-500/10" : "bg-blue-500/10"
+                }`}>
+                  <Ionicons
+                    name={record.type === "pdf" ? "document-text" : "image"}
+                    size={18}
+                    color={record.type === "pdf" ? "#EF4444" : "#3B82F6"}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs font-bold text-text-main dark:text-text-main-dark" numberOfLines={1}>
+                    {record.name}
+                  </Text>
+                  <Text className="text-[10px] text-text-muted dark:text-text-muted-dark font-semibold mt-0.5">
+                    {record.date} • {record.size}
+                  </Text>
+                </View>
               </View>
-              <TouchableOpacity
-                onPress={() => setIsRecordModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center"
-              >
-                <Ionicons name="close" size={18} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            {/* List of files */}
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {DUMMY_MEDICAL_RECORDS.map((record) => (
-                <TouchableOpacity
-                  key={record.id}
-                  onPress={() => handleSelectMedicalRecord(record)}
-                  className="flex-row items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl mb-3"
-                >
-                  <View className="flex-row items-center flex-1 pr-4">
-                    <View className={`w-9 h-9 rounded-xl items-center justify-center mr-3 ${
-                      record.type === "pdf" ? "bg-red-50" : "bg-blue-50"
-                    }`}>
-                      <Ionicons
-                        name={record.type === "pdf" ? "document-text" : "image"}
-                        size={18}
-                        color={record.type === "pdf" ? "#EF4444" : "#3B82F6"}
-                      />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-xs font-bold text-slate-800" numberOfLines={1}>
-                        {record.name}
-                      </Text>
-                      <Text className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                        {record.date} • {record.size}
-                      </Text>
-                    </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={14} color="#94A3B8" />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+              <Ionicons name="chevron-forward" size={14} color={isDark ? "#475569" : "#CBD5E1"} />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </BottomSheet>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
-    justifyContent: "flex-end",
-  },
-});
+const styles = StyleSheet.create({});
