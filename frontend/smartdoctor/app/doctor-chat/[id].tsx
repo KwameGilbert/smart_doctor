@@ -12,7 +12,7 @@ import {
   Modal,
   KeyboardAvoidingView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -39,6 +39,7 @@ interface Message {
 export default function DoctorChatScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
+  const insets = useSafeAreaInsets();
 
   const { id } = useLocalSearchParams();
   const [doctor, setDoctor] = useState<any>(
@@ -249,9 +250,9 @@ export default function DoctorChatScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 60 : 0}
       >
         {/* Messages List */}
         <ScrollView
