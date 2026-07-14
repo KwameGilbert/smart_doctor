@@ -423,6 +423,39 @@ export const cancelAppointment = async (req: Request, res: Response, next: NextF
 // Admin: List All
 // ─────────────────────────────────────────────────────────────────────────────
 
+export const rescheduleAppointment = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { date, time } = req.body;
+
+    if (!date || !time) {
+      return sendBadRequest(res, "Date and time are required for rescheduling.");
+    }
+
+    const appt = await db("appointments").where({ id }).first();
+    if (!appt) {
+      return sendNotFound(res, "Appointment not found.");
+    }
+
+    if (appt.patientId !== userId && appt.doctorId !== userId) {
+      return sendForbidden(res, "Access denied.");
+    }
+
+    const dateTime = new Date(`${date} ${time}`).toISOString();
+    await db("appointments").where({ id }).update({
+      dateTime,
+      status: "PENDING",
+      updatedAt: new Date().toISOString()
+    });
+
+    const updated = await db("appointments").where({ id }).first();
+    return sendSuccess(res, updated, "Appointment rescheduled successfully.");
+  } catch (err) {
+    next(err);
+  }
+};
+
 /**
  * GET /admin/appointments
  * All appointments, filterable by doctorId, patientId, status, date range.
