@@ -9,13 +9,13 @@ import {
   Platform,
   UIManager,
   LayoutAnimation,
-  Alert,
   KeyboardAvoidingView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import ChatInput from "../../components/ChatInput";
+import { useAlert } from "../../components/ui/AlertModal";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -44,6 +44,8 @@ const STARTER_PROMPTS = [
 export default function ChatScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { showAlert } = useAlert();
+  const insets = useSafeAreaInsets();
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -135,7 +137,7 @@ export default function ChatScreen() {
   };
 
   const handleClearChat = () => {
-    Alert.alert("Clear Conversation", "Are you sure you want to clear all messages?", [
+    showAlert("Clear Conversation", "Are you sure you want to clear all messages?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Clear",
@@ -178,9 +180,9 @@ export default function ChatScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 60 : 0}
       >
         {/* Messages Scroll Area */}
         <ScrollView
