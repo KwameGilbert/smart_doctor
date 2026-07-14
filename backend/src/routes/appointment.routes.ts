@@ -19,5 +19,6 @@ router.patch("/:id/reject", authenticate, authorize("DOCTOR"), apptCtrl.rejectAp
 
 // Any authenticated user cancels (ownership-checked inside controller)
 router.patch("/:id/cancel", authenticate, apptCtrl.cancelAppointment);
+router.patch("/:id/reschedule", authenticate, apptCtrl.rescheduleAppointment);
 
 export default router;
