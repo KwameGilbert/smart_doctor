@@ -73,7 +73,7 @@ export const DUMMY_REVIEWS_2: Review[] = [
 
 export const TOP_DOCTORS: Doctor[] = [
   {
-    id: "1",
+    id: "a1b0b111-c14f-4d33-bcbe-8e01d227361a",
     name: "Dr. Rita Yeboah",
     specialty: "Cardiologist",
     rating: 4.9,
@@ -126,7 +126,7 @@ export const TOP_DOCTORS: Doctor[] = [
     ],
   },
   {
-    id: "2",
+    id: "b2c0c222-d24f-4e33-acbe-9e01d227361b",
     name: "Dr. Samuel Mensah",
     specialty: "Pediatrician",
     rating: 4.8,
@@ -174,7 +174,7 @@ export const TOP_DOCTORS: Doctor[] = [
     ],
   },
   {
-    id: "3",
+    id: "a1b0b111-c14f-4d33-bcbe-8e01d227361a",
     name: "Dr. Emma Watson",
     specialty: "Dermatologist",
     rating: 4.9,
@@ -399,7 +399,7 @@ export interface ChatConversation {
 export const DOCTOR_CHATS: ChatConversation[] = [
   {
     id: "1",
-    doctorId: "1", // Dr. Rita Yeboah
+    doctorId: "a1b0b111-c14f-4d33-bcbe-8e01d227361a", // Dr. Rita Yeboah
     lastMessage: "Hey Elton, make sure to take your meds on time!",
     time: "10:14 AM",
     unreadCount: 1,
@@ -407,7 +407,7 @@ export const DOCTOR_CHATS: ChatConversation[] = [
   },
   {
     id: "2",
-    doctorId: "2", // Dr. Samuel Mensah
+    doctorId: "b2c0c222-d24f-4e33-acbe-9e01d227361b", // Dr. Samuel Mensah
     lastMessage: "You're welcome! Let me know if you need anything else.",
     time: "Yesterday",
     unreadCount: 0,
@@ -415,7 +415,7 @@ export const DOCTOR_CHATS: ChatConversation[] = [
   },
   {
     id: "3",
-    doctorId: "3", // Dr. Emma Watson
+    doctorId: "a1b0b111-c14f-4d33-bcbe-8e01d227361a", // Dr. Emma Watson
     lastMessage: "The rash looks much better. Keep applying the cream.",
     time: "June 18",
     unreadCount: 0,
