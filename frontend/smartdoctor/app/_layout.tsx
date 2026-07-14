@@ -66,7 +66,9 @@ export default function RootLayout() {
     <ThemeProvider value={AppTheme}>
       <AlertProvider>
         <View style={{ flex: 1 }} onLayout={onRootViewLayout}>
-          <Stack screenOptions={{ headerShown: false }} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+          </Stack>
 
           {showAnimatedSplash && (
             <AnimatedSplash onFinished={() => setShowAnimatedSplash(false)} />
