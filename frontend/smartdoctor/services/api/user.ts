@@ -34,4 +34,12 @@ export const userApi = {
     const response = await apiClient.get(API_ENDPOINTS.USERS.DOCTOR_DETAIL(id));
     return response.data;
   },
+
+  /**
+   * Update the current user's profile details.
+   */
+  async updateProfile(data: any): Promise<ApiResponse<any>> {
+    const response = await apiClient.put(API_ENDPOINTS.USERS.PROFILE, data);
+    return response.data;
+  },
 };
