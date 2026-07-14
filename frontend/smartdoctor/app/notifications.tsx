@@ -1,14 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useColorScheme } from "nativewind";
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { notificationApi } from "../services/api/notification";
 
 interface NotificationItem {
   id: string;
@@ -62,14 +64,51 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   },
 ];
 
+const getRelativeTime = (dateStr: string) => {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+};
+
 export default function NotificationsScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>(
-    INITIAL_NOTIFICATIONS
-  );
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await notificationApi.list();
+      if (response.status === "success" && response.data) {
+        const mapped = response.data.map((item: any) => ({
+          id: item.id,
+          type: item.type as any,
+          title: item.title,
+          message: item.body,
+          time: getRelativeTime(item.createdAt),
+          read: item.isRead,
+        }));
+        setNotifications(mapped);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const filteredNotifications = notifications.filter((n) => {
@@ -77,26 +116,49 @@ export default function NotificationsScreen() {
     return true;
   });
 
-  const handleMarkAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const handleMarkAllAsRead = async () => {
+    try {
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      await notificationApi.markAllAsRead();
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
+    }
   };
 
-  const handleToggleRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n))
-    );
+  const handleToggleRead = async (id: string) => {
+    try {
+      const isCurrentlyUnread = !notifications.find((n) => n.id === id)?.read;
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      );
+      if (isCurrentlyUnread) {
+        await notificationApi.markAsRead(id);
+      }
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      await notificationApi.delete(id);
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+    }
   };
 
-  const handleClearAll = () => {
-    setNotifications([]);
+  const handleClearAll = async () => {
+    try {
+      setNotifications([]);
+      await notificationApi.clearAll();
+    } catch (error) {
+      console.error("Failed to clear notifications:", error);
+    }
   };
 
   const handleRestoreDefaults = () => {
-    setNotifications(INITIAL_NOTIFICATIONS);
+    fetchNotifications();
   };
 
   const renderIcon = (type: string) => {
@@ -203,7 +265,14 @@ export default function NotificationsScreen() {
         </View>
       )}
 
-      {filteredNotifications.length === 0 ? (
+      {loading ? (
+        <View className="flex-1 items-center justify-center bg-background dark:bg-background-dark">
+          <ActivityIndicator size="large" color="#1565C0" />
+          <Text className="text-xs text-text-muted dark:text-text-muted-dark font-semibold mt-4">
+            Loading notifications...
+          </Text>
+        </View>
+      ) : filteredNotifications.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8 bg-background dark:bg-background-dark">
           <View className="w-20 h-20 bg-surface dark:bg-surface-dark rounded-3xl items-center justify-center mb-6 shadow-sm border border-border-color dark:border-border-color-dark">
             <Ionicons
@@ -230,7 +299,7 @@ export default function NotificationsScreen() {
                 className="w-full bg-primary-light dark:bg-primary-light-dark py-3.5 rounded-2xl items-center justify-center border border-border-color dark:border-border-color-dark"
               >
                 <Text className="text-primary font-bold text-sm">
-                  Restore Mock Notifications
+                  Refresh Notifications
                 </Text>
               </TouchableOpacity>
             )}
