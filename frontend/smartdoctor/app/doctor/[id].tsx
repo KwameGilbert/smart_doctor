@@ -176,7 +176,7 @@ export default function DoctorDetailsScreen() {
             </View>
 
             {/* Review Cards */}
-            {doctor.reviewsList.slice(0, 2).map((review: any) => (
+            {(doctor.reviewsList || []).slice(0, 2).map((review: any) => (
               <View key={review.id} className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-4 shadow-sm shadow-slate-100/50">
                 <View className="flex-row justify-between items-start mb-3">
                   <Image
@@ -249,7 +249,7 @@ export default function DoctorDetailsScreen() {
             </View>
 
             {/* Review Cards */}
-            {doctor.reviewsList.map((review: any) => (
+            {(doctor.reviewsList || []).map((review: any) => (
               <View key={review.id} className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl p-5 mb-4 shadow-sm shadow-slate-100/50">
                 <View className="flex-row justify-between items-start mb-3">
                   <Image
