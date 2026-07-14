@@ -41,6 +41,7 @@ export const API_ENDPOINTS = {
     LIST: "/appointments",
     DETAIL: (id: string) => `/appointments/${id}`,
     CANCEL: (id: string) => `/appointments/${id}/cancel`,
+    RESCHEDULE: (id: string) => `/appointments/${id}/reschedule`,
   },
 
   // Consultations & Messages
@@ -71,6 +72,9 @@ export const API_ENDPOINTS = {
   NOTIFICATIONS: {
     LIST: "/notifications",
     READ: (id: string) => `/notifications/${id}/read`,
+    READ_ALL: "/notifications/read-all",
+    CLEAR_ALL: "/notifications",
+    DELETE: (id: string) => `/notifications/${id}`,
   },
 
   // General Upload
