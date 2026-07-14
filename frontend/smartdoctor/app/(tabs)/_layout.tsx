@@ -1,20 +1,34 @@
-import React from "react";
-import { Tabs } from "expo-router";
+import React, { useEffect } from "react";
+import { Tabs, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Platform } from "react-native";
+import { Platform, BackHandler } from "react-native";
 import { useColorScheme } from "nativewind";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { colorScheme } = useColorScheme();
+  const navigation = useNavigation();
 
   const isDark = colorScheme === "dark";
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      const actionType = e.data.action.type;
+      if (actionType === "GO_BACK" || actionType === "POP") {
+        e.preventDefault();
+        BackHandler.exitApp();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: isDark ? "#3B82F6" : "#1D4ED8",
         tabBarInactiveTintColor: isDark ? "#64748B" : "#94A3B8",
         tabBarStyle: {
