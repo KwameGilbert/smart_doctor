@@ -36,6 +36,16 @@ export const userApi = {
   },
 
   /**
+   * Fetch doctor available slots.
+   */
+  async getDoctorAvailableSlots(doctorId: string, fromDate: string, days = 7): Promise<ApiResponse<any>> {
+    const response = await apiClient.get(
+      `${API_ENDPOINTS.DOCTORS.GET_AVAILABLE_SLOTS(doctorId)}?from=${fromDate}&days=${days}`
+    );
+    return response.data;
+  },
+
+  /**
    * Update the current user's profile details.
    */
   async updateProfile(data: any): Promise<ApiResponse<any>> {

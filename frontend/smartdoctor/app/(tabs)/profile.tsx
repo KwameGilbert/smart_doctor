@@ -164,7 +164,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               const response = await medicalRecordApi.delete(id);
-              if (response.status === "success" || response.status === "no-content") {
+              if (response.status === "success") {
                 showAlert("Deleted", `"${name}" has been deleted.`);
                 fetchRecords();
               }

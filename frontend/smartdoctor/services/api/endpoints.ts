@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
   DOCTORS: {
     AVAILABILITY: "/doctors/availability",
     UNAVAILABILITY: "/doctors/unavailability",
+    GET_AVAILABLE_SLOTS: (doctorId: string) => `/doctors/${doctorId}/available-slots`,
   },
 
   // Appointments

@@ -18,6 +18,7 @@ import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { ALL_DOCTORS } from "../../constants/data";
 import { appointmentApi } from "../../services/api/appointment";
+import { userApi } from "../../services/api/user";
 import { useAlert } from "../../components/ui/AlertModal";
 import BottomSheet from "../../components/ui/BottomSheet";
 
@@ -50,21 +51,49 @@ export default function AppointmentsScreen() {
   // Scheduler flow states
   const [schedulerStep, setSchedulerStep] = useState<"booking" | "success" | null>(null);
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
-  const [selectedTime, setSelectedTime] = useState("09:00 AM");
+  const [selectedTime, setSelectedTime] = useState("");
   const [consultationType, setConsultationType] = useState<"Online Call" | "Clinic Visit">("Online Call");
 
   // Rescheduling states
   const [reschedulingAppointment, setReschedulingAppointment] = useState<Appointment | null>(null);
   const [rescheduleDateIndex, setRescheduleDateIndex] = useState(0);
-  const [rescheduleTime, setRescheduleTime] = useState("09:00 AM");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+
+  const [availableSlotsData, setAvailableSlotsData] = useState<{ date: string; slots: string[] }[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  const formatSlotTo12Hr = (time24: string) => {
+    if (!time24) return "";
+    const [hourStr, minStr] = time24.split(":");
+    const hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${String(hour12).padStart(2, "0")}:${minStr} ${ampm}`;
+  };
 
   const dates = React.useMemo(() => {
+    if (availableSlotsData && availableSlotsData.length > 0) {
+      return availableSlotsData.map((d) => {
+        const [year, month, day] = d.date.split("-").map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        return {
+          dateStr: d.date,
+          dayName: dateObj.toLocaleDateString("en-US", { weekday: "short" }),
+          dayNum: dateObj.getDate(),
+          month: dateObj.toLocaleDateString("en-US", { month: "short" }),
+          fullString: dateObj.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+        };
+      });
+    }
+    
+    // Fallback static list of next 7 days in case data is loading/empty
     const list = [];
     const today = new Date();
     for (let i = 1; i <= 7; i++) {
       const nextDay = new Date(today);
       nextDay.setDate(today.getDate() + i);
       list.push({
+        dateStr: nextDay.toISOString().split("T")[0],
         dayName: nextDay.toLocaleDateString("en-US", { weekday: "short" }),
         dayNum: nextDay.getDate(),
         month: nextDay.toLocaleDateString("en-US", { month: "short" }),
@@ -72,17 +101,17 @@ export default function AppointmentsScreen() {
       });
     }
     return list;
-  }, []);
+  }, [availableSlotsData]);
 
-  const times = [
-    "09:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "01:30 PM",
-    "02:30 PM",
-    "03:30 PM",
-    "04:30 PM",
-  ];
+  const bookingTimes = React.useMemo(() => {
+    const slots = availableSlotsData[selectedDateIndex]?.slots;
+    return slots && slots.length > 0 ? slots : [];
+  }, [availableSlotsData, selectedDateIndex]);
+
+  const rescheduleTimes = React.useMemo(() => {
+    const slots = availableSlotsData[rescheduleDateIndex]?.slots;
+    return slots && slots.length > 0 ? slots : [];
+  }, [availableSlotsData, rescheduleDateIndex]);
 
   const fetchAppointments = async () => {
     try {
@@ -91,17 +120,15 @@ export default function AppointmentsScreen() {
       if (response.status === "success" && response.data) {
         const mapped = response.data.map((apt: any) => {
           const docId = apt.doctorId;
-          let doctor = ALL_DOCTORS.find((d) => d.id === docId);
-          if (!doctor) {
-            doctor = {
-              id: docId,
-              name: apt.doctorFirstName ? `Dr. ${apt.doctorFirstName} ${apt.doctorLastName}` : "Unknown Doctor",
-              image: apt.doctorAvatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200",
-              specialty: "General Medicine",
-              rating: 4.5,
-              reviews: 0,
-            } as any;
-          }
+          const foundDoctor = ALL_DOCTORS.find((d) => d.id === docId);
+          const doctor = foundDoctor || ({
+            id: docId,
+            name: apt.doctorFirstName ? `Dr. ${apt.doctorFirstName} ${apt.doctorLastName}` : "Unknown Doctor",
+            image: apt.doctorAvatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=200",
+            specialty: "General Medicine",
+            rating: 4.5,
+            reviews: 0,
+          } as typeof ALL_DOCTORS[0]);
 
           const dateObj = new Date(apt.dateTime);
           const formattedDate = dateObj.toLocaleDateString("en-US", {
@@ -148,11 +175,45 @@ export default function AppointmentsScreen() {
     }
   }, [schedulerStep]);
 
+  const fetchDoctorSlots = async (docId: string, isForReschedule = false) => {
+    try {
+      setLoadingSlots(true);
+      const todayStr = new Date().toISOString().split("T")[0];
+      const response = await userApi.getDoctorAvailableSlots(docId, todayStr, 14);
+      if (response.status === "success" && response.data) {
+        const availabilityList = response.data.availability || [];
+        const filtered = availabilityList.filter((item: any) => item.slots && item.slots.length > 0);
+        setAvailableSlotsData(filtered);
+        
+        if (isForReschedule) {
+          setRescheduleDateIndex(0);
+          if (filtered.length > 0 && filtered[0].slots.length > 0) {
+            setRescheduleTime(filtered[0].slots[0]);
+          } else {
+            setRescheduleTime("");
+          }
+        } else {
+          setSelectedDateIndex(0);
+          if (filtered.length > 0 && filtered[0].slots.length > 0) {
+            setSelectedTime(filtered[0].slots[0]);
+          } else {
+            setSelectedTime("");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch doctor available slots:", error);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
   // Monitor parameter changes for scheduling navigation
   useEffect(() => {
     if (doctorId) {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setSchedulerStep("booking");
+      fetchDoctorSlots(doctorId, false);
     } else {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setSchedulerStep(null);
@@ -166,9 +227,14 @@ export default function AppointmentsScreen() {
 
   const handleConfirmBooking = async () => {
     try {
-      const dateString = dates[selectedDateIndex].fullString;
+      const activeDate = dates[selectedDateIndex];
+      const dateString = activeDate?.dateStr;
       const timeString = selectedTime;
-      const dateTime = new Date(`${dateString} ${timeString}`).toISOString();
+      if (!dateString || !timeString) {
+        showAlert("Booking Info", "Please select a date and an available time slot.");
+        return;
+      }
+      const dateTime = `${dateString}T${timeString}:00.000Z`;
       const reason = `${consultationType}|Routine checkup`;
 
       const response = await appointmentApi.create({
@@ -177,7 +243,7 @@ export default function AppointmentsScreen() {
         reason,
       });
 
-      if (response.status === "success" || response.status === "created" || response.data) {
+      if (response.status === "success" || response.data) {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setSchedulerStep("success");
       } else {
@@ -191,7 +257,6 @@ export default function AppointmentsScreen() {
   };
 
   const handleCloseSuccess = () => {
-    // Clear route parameters so scheduler doesn't re-trigger
     router.replace("/(tabs)/appointments");
     setSchedulerStep(null);
     setActiveTab("Upcoming");
@@ -229,16 +294,22 @@ export default function AppointmentsScreen() {
   const handleOpenReschedule = (apt: Appointment) => {
     setReschedulingAppointment(apt);
     setRescheduleDateIndex(0);
-    setRescheduleTime(apt.time);
+    setRescheduleTime("");
+    fetchDoctorSlots(apt.doctor.id, true);
   };
 
   const handleSaveReschedule = async () => {
     if (!reschedulingAppointment) return;
     
     try {
-      const dateString = dates[rescheduleDateIndex].fullString;
+      const activeDate = dates[rescheduleDateIndex];
+      const dateString = activeDate?.dateStr;
       const timeString = rescheduleTime;
-
+      if (!dateString || !timeString) {
+        showAlert("Reschedule Info", "Please select a date and an available time slot.");
+        return;
+      }
+      
       const response = await appointmentApi.reschedule(reschedulingAppointment.id, {
         date: dateString,
         time: timeString,
@@ -298,66 +369,83 @@ export default function AppointmentsScreen() {
             </View>
           </View>
 
-          {/* Date Selector */}
-          <View className="mt-8">
-            <Text className="text-sm font-bold text-text-main dark:text-text-main-dark px-6 mb-4">Select Date</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
-            >
-              {dates.map((d, index) => {
-                const isSelected = selectedDateIndex === index;
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => setSelectedDateIndex(index)}
-                    className={`w-16 py-3 rounded-2xl items-center justify-center border ${
-                      isSelected
-                        ? "bg-primary border-primary"
-                        : "bg-surface dark:bg-surface-dark border-border-color dark:border-border-color-dark"
-                    }`}
-                  >
-                    <Text className={`text-[10px] font-bold ${isSelected ? "text-blue-100" : "text-text-light dark:text-text-light-dark"}`}>
-                      {d.dayName}
-                    </Text>
-                    <Text className={`text-lg font-extrabold mt-0.5 ${isSelected ? "text-white" : "text-text-main dark:text-text-main-dark"}`}>
-                      {d.dayNum}
-                    </Text>
-                    <Text className={`text-[9px] font-bold mt-0.5 ${isSelected ? "text-blue-200" : "text-text-light dark:text-text-light-dark"}`}>
-                      {d.month}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-
-          {/* Time Selector */}
-          <View className="mt-8">
-            <Text className="text-sm font-bold text-text-main dark:text-text-main-dark px-6 mb-4">Available Time Slots</Text>
-            <View className="flex-row flex-wrap px-6 gap-3">
-              {times.map((t) => {
-                const isSelected = selectedTime === t;
-                return (
-                  <TouchableOpacity
-                    key={t}
-                    onPress={() => setSelectedTime(t)}
-                    style={{ width: "31%" }}
-                    className={`py-3 rounded-2xl items-center justify-center border ${
-                      isSelected
-                        ? "bg-primary border-primary"
-                        : "bg-background dark:bg-background-dark border-border-color dark:border-border-color-dark"
-                    }`}
-                  >
-                    <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-text-main dark:text-text-main-dark"}`}>
-                      {t}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+          {loadingSlots ? (
+            <View className="py-20 justify-center items-center">
+              <ActivityIndicator size="large" color="#1565C0" />
+              <Text className="text-xs text-text-muted dark:text-text-muted-dark mt-4 font-bold">Loading available slots...</Text>
             </View>
-          </View>
+          ) : (
+            <>
+              {/* Date Selector */}
+              <View className="mt-8">
+                <Text className="text-sm font-bold text-text-main dark:text-text-main-dark px-6 mb-4">Select Date</Text>
+                {dates.length === 0 ? (
+                  <Text className="text-xs text-text-muted dark:text-text-muted-dark px-6 font-semibold">No available dates found.</Text>
+                ) : (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
+                  >
+                    {dates.map((d, index) => {
+                      const isSelected = selectedDateIndex === index;
+                      return (
+                        <TouchableOpacity
+                          key={index}
+                          onPress={() => setSelectedDateIndex(index)}
+                          className={`w-16 py-3 rounded-2xl items-center justify-center border ${
+                            isSelected
+                              ? "bg-primary border-primary"
+                              : "bg-surface dark:bg-surface-dark border-border-color dark:border-border-color-dark"
+                          }`}
+                        >
+                          <Text className={`text-[10px] font-bold ${isSelected ? "text-blue-100" : "text-text-light dark:text-text-light-dark"}`}>
+                            {d.dayName}
+                          </Text>
+                          <Text className={`text-lg font-extrabold mt-0.5 ${isSelected ? "text-white" : "text-text-main dark:text-text-main-dark"}`}>
+                            {d.dayNum}
+                          </Text>
+                          <Text className={`text-[9px] font-bold mt-0.5 ${isSelected ? "text-blue-200" : "text-text-light dark:text-text-light-dark"}`}>
+                            {d.month}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </View>
+
+              {/* Time Selector */}
+              <View className="mt-8">
+                <Text className="text-sm font-bold text-text-main dark:text-text-main-dark px-6 mb-4">Available Time Slots</Text>
+                <View className="flex-row flex-wrap px-6 gap-3">
+                  {bookingTimes.length === 0 ? (
+                    <Text className="text-xs text-text-muted dark:text-text-muted-dark font-semibold">No available slots for this date.</Text>
+                  ) : (
+                    bookingTimes.map((t) => {
+                      const isSelected = selectedTime === t;
+                      return (
+                        <TouchableOpacity
+                          key={t}
+                          onPress={() => setSelectedTime(t)}
+                          style={{ width: "31%" }}
+                          className={`py-3 rounded-2xl items-center justify-center border ${
+                            isSelected
+                              ? "bg-primary border-primary"
+                              : "bg-background dark:bg-background-dark border-border-color dark:border-border-color-dark"
+                          }`}
+                        >
+                          <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-text-main dark:text-text-main-dark"}`}>
+                            {formatSlotTo12Hr(t)}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })
+                  )}
+                </View>
+              </View>
+            </>
+          )}
 
           {/* Consultation Type Selector */}
           <View className="mt-8 px-6">
@@ -446,7 +534,7 @@ export default function AppointmentsScreen() {
           <View className="flex-row justify-between mb-3 border-b border-border-color dark:border-border-color-dark pb-3">
             <Text className="text-xs text-text-light dark:text-text-light-dark font-bold">Date & Time</Text>
             <Text className="text-xs text-text-main dark:text-text-main-dark font-extrabold">
-              {dates[selectedDateIndex].fullString} at {selectedTime}
+              {dates[selectedDateIndex]?.fullString} at {formatSlotTo12Hr(selectedTime)}
             </Text>
           </View>
           <View className="flex-row justify-between">
@@ -722,25 +810,36 @@ export default function AppointmentsScreen() {
 
             {/* Time Grid */}
             <Text className="text-xs font-bold text-text-muted dark:text-text-muted-dark mb-3 uppercase tracking-wider">Select New Time</Text>
-            <View className="flex-row flex-wrap gap-2.5 mb-8">
-              {times.map((t) => {
-                const isSelected = rescheduleTime === t;
-                return (
-                  <TouchableOpacity
-                    key={t}
-                    onPress={() => setRescheduleTime(t)}
-                    style={{ width: "31%" }}
-                    className={`py-2.5 rounded-2xl items-center border ${
-                      isSelected ? "bg-primary border-primary" : "bg-background dark:bg-background-dark border-border-color dark:border-border-color-dark"
-                    }`}
-                  >
-                    <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-text-main dark:text-text-main-dark"}`}>
-                      {t}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {loadingSlots ? (
+              <View className="py-8 justify-center items-center">
+                <ActivityIndicator size="small" color="#1565C0" />
+                <Text className="text-xs text-text-muted dark:text-text-muted-dark mt-2 font-semibold">Loading slots...</Text>
+              </View>
+            ) : (
+              <View className="flex-row flex-wrap gap-2.5 mb-8">
+                {rescheduleTimes.length === 0 ? (
+                  <Text className="text-xs text-text-muted dark:text-text-muted-dark font-semibold">No available slots for this date.</Text>
+                ) : (
+                  rescheduleTimes.map((t) => {
+                    const isSelected = rescheduleTime === t;
+                    return (
+                      <TouchableOpacity
+                        key={t}
+                        onPress={() => setRescheduleTime(t)}
+                        style={{ width: "31%" }}
+                        className={`py-2.5 rounded-2xl items-center border ${
+                          isSelected ? "bg-primary border-primary" : "bg-background dark:bg-background-dark border-border-color dark:border-border-color-dark"
+                        }`}
+                      >
+                        <Text className={`text-xs font-bold ${isSelected ? "text-white" : "text-text-main dark:text-text-main-dark"}`}>
+                          {formatSlotTo12Hr(t)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </View>
+            )}
 
             {/* Action button */}
             <TouchableOpacity
