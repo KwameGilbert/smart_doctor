@@ -222,7 +222,7 @@ export class UserModelClass extends BaseModel<User> {
           licenseNumber: null,
           experienceYears: 0,
           rating: 0.0,
-          status: "PENDING"
+          status: "APPROVED"
         });
       }
 

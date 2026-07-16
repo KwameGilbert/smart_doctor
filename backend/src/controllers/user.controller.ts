@@ -53,6 +53,99 @@ export const getHomeDashboard = async (req: Request, res: Response, next: NextFu
       return sendUnauthorized(res, "Profile not found. Please log in again.");
     }
 
+    if (role === "DOCTOR") {
+      // Fetch all appointments for the doctor
+      const appointments = await db("appointments")
+        .where({ doctorId: userId });
+
+      const totalAppointments = appointments.length;
+      const completedAppointments = appointments.filter((a: any) => a.status === 'COMPLETED').length;
+      const pendingAppointments = appointments.filter((a: any) => a.status === 'PENDING').length;
+      
+      const fee = parseFloat(profile.consultationFee as any) || 0;
+      const totalEarnings = completedAppointments * fee;
+
+      // Unique patients
+      const uniquePatientsResult = await db("appointments")
+        .where({ doctorId: userId })
+        .countDistinct("patientId as count")
+        .first();
+      const uniquePatients = Number((uniquePatientsResult as any)?.count || 0);
+
+      // Today's appointments (joined with patient users)
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const todayAppointments = await db("appointments")
+        .join("users as patientUser", "appointments.patientId", "=", "patientUser.id")
+        .select(
+          "appointments.*",
+          "patientUser.firstName as patientFirstName",
+          "patientUser.lastName as patientLastName",
+          "patientUser.avatarUrl as patientAvatar"
+        )
+        .where("appointments.doctorId", userId)
+        .andWhere(db.raw("DATE(appointments.\"dateTime\") = ?", [today]))
+        .orderBy("appointments.dateTime", "asc");
+
+      // Last 7 days earnings breakdown
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const earningsByDay = await db("appointments")
+        .select(
+          db.raw("DATE(\"dateTime\") as date"),
+          db.raw("COUNT(*)::int as count")
+        )
+        .where("doctorId", userId)
+        .andWhere("status", "COMPLETED")
+        .andWhere("dateTime", ">=", sevenDaysAgo.toISOString())
+        .groupBy(db.raw("DATE(\"dateTime\")"))
+        .orderBy(db.raw("DATE(\"dateTime\")"), "asc");
+
+      // Format last 7 days weekdays
+      const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const trendMap = new Map<string, number>();
+      
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateKey = d.toISOString().split('T')[0];
+        trendMap.set(dateKey, 0);
+      }
+
+      // Populate counts from query
+      for (const row of earningsByDay) {
+        const dateKey = new Date(row.date).toISOString().split('T')[0];
+        trendMap.set(dateKey, row.count * fee);
+      }
+
+      const earningsTrend = Array.from(trendMap.entries()).map(([date, value]) => {
+        const dayName = weekdays[new Date(date).getDay()];
+        return { day: dayName, value };
+      });
+
+      return sendSuccess(res, {
+        role: "DOCTOR",
+        user: {
+          id: profile.id,
+          email: profile.email,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          avatarUrl: profile.avatarUrl,
+          status: profile.status,
+          consultationFee: fee
+        },
+        stats: {
+          totalBookings: totalAppointments,
+          totalEarnings,
+          completed: completedAppointments,
+          pending: pendingAppointments,
+          uniquePatients
+        },
+        todayAppointments,
+        earningsTrend
+      }, "Doctor dashboard analytics retrieved.");
+    }
+
     // 2. Fetch specialties
     const specialties = await db("specialties").select("id", "name", "description", "icon", "color", "bg");
 

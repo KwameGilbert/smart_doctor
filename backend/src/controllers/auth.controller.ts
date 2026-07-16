@@ -53,7 +53,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
         firstName,
         lastName,
         role,
-        isVerified: false
+        isVerified: role === "DOCTOR"
       },
       {}, // Defaults will be populated inside the transaction based on role
       {
@@ -66,14 +66,20 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     // Log action to audit logs
     await logAction(userId, "USER_REGISTERED", `User registered with email: ${email} and role: ${role}`, req.ip);
 
-    // Send OTP via email (non-blocking, logged in dev console)
-    sendEmail(
-      email,
-      "Smart Doctor - Verification Code",
-      getOTPTemplate(firstName, otpCode)
-    );
+    // Send OTP via email only if not pre-verified (e.g., PATIENT)
+    if (role !== "DOCTOR") {
+      sendEmail(
+        email,
+        "Smart Doctor - Verification Code",
+        getOTPTemplate(firstName, otpCode)
+      );
+    }
 
-    return sendCreated(res, { userId, email, role }, "Registration successful. Verification code has been sent.");
+    const msg = role === "DOCTOR"
+      ? "Registration successful. You can now log in."
+      : "Registration successful. Verification code has been sent.";
+
+    return sendCreated(res, { userId, email, role }, msg);
   } catch (error: any) {
     next(error);
   }

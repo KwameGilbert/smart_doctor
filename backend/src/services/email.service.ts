@@ -28,6 +28,8 @@ const createTransporter = () => {
  * @param text Plaintext fallback content.
  */
 export const sendEmail = async (to: string, subject: string, html: string, text?: string): Promise<boolean> => {
+  // Always log emails in development for testing verification and password reset codes
+  console.log(`\n📧 [EMAIL SENT] To: ${to}\nSubject: ${subject}\nContent:\n${text || html.replace(/<[^>]*>/g, "")}\n`);
   try {
     const transporter = createTransporter();
     const from = process.env.EMAIL_FROM || '"Smart Doctor" <noreply@smartdoctor.com>';
