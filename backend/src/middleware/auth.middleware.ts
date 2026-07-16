@@ -18,6 +18,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.warn("Auth Middleware: Access Denied. Authorization Header missing or incorrect format.");
       return sendError(res, "Access denied. No token provided.", 401);
     }
 
@@ -26,6 +27,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     req.user = decoded;
     return next();
   } catch (error: any) {
+    console.error("Auth Middleware: JWT verification failed -", error.message);
     return sendError(res, "Invalid or expired token.", 401);
   }
 };

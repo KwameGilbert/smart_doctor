@@ -7,7 +7,7 @@ import { initSocketServer } from "./services/socket.service";
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, "../.env") });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 7000;
 
 const server = app.listen(PORT, () => {
   console.log(`🚀 Server running in ${process.env.NODE_ENV || "development"} mode on port http://localhost:${PORT}`);

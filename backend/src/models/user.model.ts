@@ -78,12 +78,25 @@ export class UserModelClass extends BaseModel<User> {
    * Find a user and their role-specific profile joined together.
    */
   async findFullProfile(userId: string, role: string): Promise<any> {
-    const query = db(this.tableName)
-      .where("users.id", userId)
-      .first();
+    const baseUser = await db(this.tableName).where("id", userId).first();
+    if (!baseUser) return null;
 
     if (role === "PATIENT") {
-      return query
+      const patientExists = await db("patients").where("id", userId).first();
+      if (!patientExists) {
+        await db("patients").insert({
+          id: userId,
+          dob: null,
+          gender: null,
+          bloodGroup: null,
+          allergies: null,
+          emergencyContactName: null,
+          emergencyContactPhone: null
+        });
+      }
+      return db(this.tableName)
+        .where("users.id", userId)
+        .first()
         .join("patients", "users.id", "=", "patients.id")
         .select(
           "users.id",
@@ -107,7 +120,21 @@ export class UserModelClass extends BaseModel<User> {
           "patients.emergencyContactPhone"
         );
     } else if (role === "DOCTOR") {
-      const profile = await query
+      const doctorExists = await db("doctors").where("id", userId).first();
+      if (!doctorExists) {
+        await db("doctors").insert({
+          id: userId,
+          bio: "",
+          consultationFee: 0.00,
+          licenseNumber: null,
+          experienceYears: 0,
+          rating: 0.0,
+          status: "APPROVED"
+        });
+      }
+      const profile = await db(this.tableName)
+        .where("users.id", userId)
+        .first()
         .join("doctors", "users.id", "=", "doctors.id")
         .select(
           "users.id",
@@ -142,7 +169,15 @@ export class UserModelClass extends BaseModel<User> {
 
       return profile;
     } else if (role === "ADMIN") {
-      return query
+      const adminExists = await db("admins").where("id", userId).first();
+      if (!adminExists) {
+        await db("admins").insert({
+          id: userId
+        });
+      }
+      return db(this.tableName)
+        .where("users.id", userId)
+        .first()
         .join("admins", "users.id", "=", "admins.id")
         .select(
           "users.id",
@@ -161,7 +196,7 @@ export class UserModelClass extends BaseModel<User> {
         );
     }
 
-    return query;
+    return db(this.tableName).where("id", userId).first();
   }
 
   /**
