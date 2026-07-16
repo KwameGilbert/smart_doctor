@@ -53,7 +53,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
         firstName,
         lastName,
         role,
-        isVerified: role === "DOCTOR"
+        isVerified: true
       },
       {}, // Defaults will be populated inside the transaction based on role
       {

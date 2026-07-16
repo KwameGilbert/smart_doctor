@@ -58,11 +58,12 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
+      console.log("Attempting login with:", emailOrPhone.trim());
       const response = await authApi.login({
         email: emailOrPhone.trim(),
         password,
       });
-
+      console.log("Login response:", response);
       if (response.status === "success" && response.data?.token) {
         // Save the JWT token securely
         await tokenStorage.saveToken(response.data.token);

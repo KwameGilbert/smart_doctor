@@ -3,8 +3,8 @@ import { router } from "expo-router";
 import { tokenStorage } from "./storage";
 import { API_ENDPOINTS } from "./endpoints";
 
-// Get base URL from environment variables
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000";
+// Get base URL from environment variables — strip any accidental trailing slash
+const BASE_URL = (process.env.EXPO_PUBLIC_API_URL || "https://smartdoctor-98s4.onrender.com").replace(/\/$/, "");
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
