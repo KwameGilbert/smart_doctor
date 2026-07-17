@@ -291,7 +291,6 @@ export const getAvailableSlots = async (req: Request, res: Response, next: NextF
       // Full-day block? (startTime is null = full-day)
       const fullDayBlock = unavails.some(u => u.startTime == null);
       if (fullDayBlock) continue;
-
       // ── 3. Get existing booked appointments on this date ─────────────────
       const dayStart = `${dateStr}T00:00:00.000Z`;
       const dayEnd   = `${dateStr}T23:59:59.999Z`;
@@ -299,7 +298,7 @@ export const getAvailableSlots = async (req: Request, res: Response, next: NextF
         .where({ doctorId })
         .whereNotIn("status", ["CANCELLED", "REJECTED"])
         .whereBetween("dateTime", [dayStart, dayEnd])
-        .select("dateTime");
+        .select(db.raw('to_char("dateTime", \'HH24:MI\') as "timeStr"'));
 
       // ── 4. Generate open slots from each availability window ─────────────
       const dateSlots: string[] = [];
@@ -321,8 +320,7 @@ export const getAvailableSlots = async (req: Request, res: Response, next: NextF
 
           // Check against existing appointments
           const blockedByAppt = bookedAppointments.some(appt => {
-            const apptDate = new Date(appt.dateTime);
-            const apptMinutes = apptDate.getUTCHours() * 60 + apptDate.getUTCMinutes();
+            const apptMinutes = timeToMinutes(appt.timeStr);
             return windowsOverlap(slotStart, slotEnd, apptMinutes, apptMinutes + slotDuration);
           });
 
