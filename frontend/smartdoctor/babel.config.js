@@ -11,8 +11,6 @@ module.exports = function (api) {
     plugins: [
       // Required by react-native-reanimated v4 / nativewind for worklets support
       "react-native-worklets/plugin",
-      ["@babel/plugin-transform-private-methods", { loose: true }],
-      ["@babel/plugin-transform-private-property-in-object", { loose: true }],
     ],
   };
 };
