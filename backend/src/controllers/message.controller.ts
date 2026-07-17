@@ -37,10 +37,6 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
       return sendForbidden(res, "Access denied.");
     }
 
-    if (!consultation.startedAt) {
-      return sendBadRequest(res, "Cannot send messages before the consultation has started.");
-    }
-
     const { content, attachmentUrl, attachmentType } = req.body;
     const hasContent = content && content.trim().length > 0;
     if (!hasContent && !attachmentUrl) {
