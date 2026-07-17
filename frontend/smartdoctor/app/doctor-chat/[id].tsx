@@ -19,6 +19,9 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ALL_DOCTORS } from "../../constants/data";
 import ChatInput from "../../components/ChatInput";
 import { userApi } from "../../services/api/user";
+import { consultationApi, MessageResponse, MessagePayload } from "../../services/api/consultation";
+import { socketService } from "../../services/api/socket";
+import { ActivityIndicator } from "react-native";
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -36,16 +39,52 @@ interface Message {
   timestamp: string;
 }
 
+const mapBackendMessage = (msg: MessageResponse, patientId: string): Message => {
+  const isUser = msg.senderId === patientId;
+  const formattedTime = new Date(msg.createdAt).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  return {
+    id: msg.id,
+    sender: isUser ? "user" : "doctor",
+    text: msg.content || undefined,
+    imageUri: msg.attachmentType === "IMAGE" ? (msg.attachmentUrl || undefined) : undefined,
+    fileName: msg.attachmentType === "DOCUMENT" ? (msg.attachmentUrl ? msg.attachmentUrl.split("/").pop() : "document") : undefined,
+    audioDuration: msg.attachmentType === "AUDIO" ? "0:10" : undefined,
+    timestamp: formattedTime
+  };
+};
+
 export default function DoctorChatScreen() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const insets = useSafeAreaInsets();
 
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams(); // Doctor's user ID
   const [doctor, setDoctor] = useState<any>(
     ALL_DOCTORS.find((d) => d.id === id) || ALL_DOCTORS[0]
   );
 
+  const [consultationId, setConsultationId] = useState<string | null>(null);
+  const [patientId, setPatientId] = useState<string>("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const consultationIdRef = useRef<string | null>(null);
+  const patientIdRef = useRef<string>("");
+
+  useEffect(() => {
+    consultationIdRef.current = consultationId;
+  }, [consultationId]);
+
+  useEffect(() => {
+    patientIdRef.current = patientId;
+  }, [patientId]);
+
+  // Fetch doctor details
   useEffect(() => {
     if (typeof id === "string") {
       userApi.getDoctorDetail(id)
@@ -61,28 +100,87 @@ export default function DoctorChatScreen() {
     }
   }, [id]);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "init-1",
-      sender: "doctor",
-      text: `Hello Elton. I've reviewed your recent checkup results. They look stable, but let's continue monitoring daily.`,
-      timestamp: "10:10 AM",
-    },
-    {
-      id: "init-2",
-      sender: "user",
-      text: "Okay, thank you doctor. I am taking the medications as prescribed.",
-      timestamp: "10:12 AM",
-    },
-    {
-      id: "init-3",
-      sender: "doctor",
-      text: "Excellent. Remember to check in if you feel any discomfort. Make sure to take your meds on time!",
-      timestamp: "10:14 AM",
-    },
-  ]);
+  // Initialize Chat (Fetch profile, consultation, and messages)
+  useEffect(() => {
+    if (!id || typeof id !== "string") return;
 
-  const [isTyping, setIsTyping] = useState(false);
+    const initChat = async () => {
+      try {
+        setLoading(true);
+        // 1. Get logged in patient profile
+        const profileRes = await userApi.getProfile();
+        if (profileRes.status !== "success" || !profileRes.data) {
+          console.error("Failed to load user profile for chat");
+          setLoading(false);
+          return;
+        }
+        const patId = profileRes.data.id;
+        setPatientId(patId);
+
+        // 2. Find active consultation by doctor ID
+        const consultRes = await consultationApi.getConsultationByPartner(id);
+        if (consultRes.status === "success" && consultRes.data) {
+          const cId = consultRes.data.id;
+          setConsultationId(cId);
+
+          // Mark messages as read
+          consultationApi.markAsRead(cId).catch((err) => console.log("Error marking as read:", err));
+
+          // 3. Load historical messages
+          const messagesRes = await consultationApi.getMessages(cId, 1, 100);
+          if (messagesRes.status === "success" && messagesRes.data) {
+            const mapped = messagesRes.data.messages.map((msg) => mapBackendMessage(msg, patId));
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setMessages(mapped);
+            setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: false }), 200);
+          }
+        }
+      } catch (err) {
+        console.error("Error initializing doctor chat screen:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initChat();
+
+    // 4. Connect WebSockets
+    const setupSocket = async () => {
+      await socketService.connect();
+
+      // Listen to new message events
+      socketService.on("new_message", (data: MessageResponse) => {
+        if (data.consultationId === consultationIdRef.current) {
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === data.id)) return prev;
+            return [...prev, mapBackendMessage(data, patientIdRef.current)];
+          });
+          setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+
+          // Mark as read
+          consultationApi.markAsRead(data.consultationId).catch((err) => console.log(err));
+        }
+      });
+
+      // Listen to typing status from the doctor
+      socketService.on("typing", (data: { consultationId: string; senderId: string; isTyping: boolean }) => {
+        if (data.consultationId === consultationIdRef.current && data.senderId === id) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setIsTyping(data.isTyping);
+          if (data.isTyping) {
+            setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+          }
+        }
+      });
+    };
+
+    setupSocket();
+
+    return () => {
+      socketService.off("new_message");
+      socketService.off("typing");
+    };
+  }, [id]);
 
   // VOIP Call states
   const [callType, setCallType] = useState<"audio" | "video" | null>(null);
@@ -127,56 +225,42 @@ export default function DoctorChatScreen() {
       audio?: { name: string; duration: string };
     }
   ) => {
+    if (!consultationId) {
+      console.warn("No active consultation session to send message to.");
+      return;
+    }
+
     const { image, file, audio } = attachments;
 
-    const userMsg: Message = {
-      id: `msg-${Date.now()}`,
-      sender: "user",
-      text: text || undefined,
-      imageUri: image || undefined,
-      fileName: file?.name,
-      fileSize: file?.size,
-      audioDuration: audio?.duration,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
+    let payload: MessagePayload = {};
+    if (text) payload.content = text;
+    
+    if (image) {
+      payload.attachmentUrl = image;
+      payload.attachmentType = "IMAGE";
+    } else if (file) {
+      payload.attachmentUrl = file.name;
+      payload.attachmentType = "DOCUMENT";
+    } else if (audio) {
+      payload.attachmentUrl = audio.name;
+      payload.attachmentType = "AUDIO";
+    }
 
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setMessages((prev) => [...prev, userMsg]);
-    setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
-
-    // Simulate Doctor Response
-    setIsTyping(true);
-    setTimeout(() => {
-      let docText = "";
-      if (image) {
-        docText = "I see. Let's keep it under observation. Clean it with warm water and avoid scratching. I'll write a prescription if it persists.";
-      } else if (file) {
-        docText = "Thank you for sending the report. I will check it in detail and write back to you shortly.";
-      } else if (audio) {
-        docText = "Received your message. It sounds like you are recovering well. Just continue with the prescribed dosage.";
-      } else {
-        const query = text.toLowerCase();
-        if (query.includes("pill") || query.includes("medicine") || query.includes("drug")) {
-          docText = "Make sure you take the medication strictly after meals as specified. Let me know if you experience any side effects.";
-        } else if (query.includes("pain") || query.includes("hurt")) {
-          docText = "Please monitor the intensity of the pain. If it worsens, we should reschedule for a physical exam at the clinic.";
-        } else {
-          docText = `Acknowledged. Continue with the guidelines we set, and let me know if you notice any changes.`;
+    // Call REST endpoint to save & broadcast the message
+    consultationApi.sendMessage(consultationId, payload)
+      .then((res) => {
+        if (res.status === "success" && res.data) {
+          // Add locally to state (if not already received via socket)
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === res.data.id)) return prev;
+            return [...prev, mapBackendMessage(res.data, patientId)];
+          });
+          setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
         }
-      }
-
-      const docMsg: Message = {
-        id: `msg-${Date.now()}`,
-        sender: "doctor",
-        text: docText,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      };
-
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setMessages((prev) => [...prev, docMsg]);
-      setIsTyping(false);
-      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
-    }, 1500);
+      })
+      .catch((err) => {
+        console.error("Failed to send message:", err);
+      });
   };
 
   // VOIP Call Launchers
@@ -254,136 +338,157 @@ export default function DoctorChatScreen() {
         className="flex-1"
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 60 : 0}
       >
-        {/* Messages List */}
-        <ScrollView
-          ref={scrollViewRef}
-          showsVerticalScrollIndicator={false}
-          className="flex-1 px-6 bg-background dark:bg-background-dark"
-          contentContainerStyle={{ paddingVertical: 20, paddingBottom: 16 }}
-          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-        >
-          {messages.map((msg) => {
-            const isUser = msg.sender === "user";
-            return (
-              <View
-                key={msg.id}
-                className={`flex-row mb-5 ${isUser ? "justify-end" : "justify-start"}`}
-              >
-                {/* Doctor Avatar */}
-                {!isUser && (
-                  <Image
-                    source={{ uri: doctor.image }}
-                    style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8, marginTop: 2 }}
-                    contentFit="cover"
-                  />
-                )}
-
-                <View className="max-w-[78%]">
-                  <View
-                    className={`rounded-[24px] p-4 ${
-                      isUser
-                        ? "bg-primary rounded-tr-none"
-                        : "bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-tl-none shadow-sm shadow-slate-100/40"
-                    }`}
-                  >
-                    {/* Render Image attachment */}
-                    {msg.imageUri && (
-                      <View className="mb-2 rounded-2xl overflow-hidden">
-                        <Image source={{ uri: msg.imageUri }} style={{ width: "100%", height: 160 }} contentFit="cover" />
-                      </View>
-                    )}
-
-                    {/* Render File attachment */}
-                    {msg.fileName && (
-                      <View className={`flex-row items-center p-3 rounded-2xl mb-2 border ${
-                        isUser ? "bg-blue-600/40 border-blue-400/30" : "bg-red-50/50 dark:bg-red-950/30 border-red-100 dark:border-red-900/50"
-                      }`}>
-                        <Ionicons name="document-text" size={24} color={isUser ? "#FFFFFF" : "#EF4444"} />
-                        <View className="ml-3 flex-1">
-                          <Text className={`text-xs font-bold ${isUser ? "text-white" : "text-text-main dark:text-text-main-dark"}`} numberOfLines={1}>
-                            {msg.fileName}
-                          </Text>
-                          <Text className={`text-[9px] font-semibold mt-0.5 ${isUser ? "text-blue-200" : "text-text-light dark:text-text-light-dark"}`}>
-                            {msg.fileSize}
-                          </Text>
-                        </View>
-                      </View>
-                    )}
-
-                    {/* Render Audio attachment */}
-                    {msg.audioDuration && (
-                      <View className={`flex-row items-center py-1.5 px-2 rounded-2xl mb-1 ${
-                        isUser ? "bg-blue-600/40" : "bg-primary-light dark:bg-primary-light-dark"
-                      }`} style={{ width: 220 }}>
-                        <TouchableOpacity className={`w-8 h-8 rounded-full items-center justify-center ${
-                          isUser ? "bg-white/20" : "bg-blue-500"
-                        }`}>
-                          <Ionicons name="play" size={14} color="#FFFFFF" style={{ marginLeft: 2 }} />
-                        </TouchableOpacity>
-                        
-                        <View className="flex-row items-center flex-1 mx-3 gap-0.5">
-                          {[3, 2, 5, 3, 4, 3, 2, 4, 3, 5, 2, 3, 4, 2, 3, 4].map((h, i) => (
-                            <View
-                              key={i}
-                              className={`w-0.5 rounded-full ${isUser ? "bg-white" : "bg-text-light dark:bg-text-light-dark"}`}
-                              style={{ height: h * 2.5 }}
-                            />
-                          ))}
-                        </View>
-                        <Text className={`text-[10px] font-bold ${isUser ? "text-blue-100" : "text-text-muted dark:text-text-muted-dark"}`}>
-                          {msg.audioDuration}
-                        </Text>
-                      </View>
-                    )}
-
-                    {/* Text Message */}
-                    {msg.text && (
-                      <Text
-                        className={`text-sm leading-relaxed ${
-                          isUser ? "text-white font-medium" : "text-text-main dark:text-text-main-dark"
-                        }`}
-                      >
-                        {msg.text}
-                      </Text>
-                    )}
-                  </View>
-
-                  <Text
-                    className={`text-[9px] text-text-light dark:text-text-light-dark font-bold mt-1.5 ${
-                      isUser ? "text-right" : "text-left"
-                    }`}
-                  >
-                    {msg.timestamp}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
-
-          {/* Doctor Typing Loader */}
-          {isTyping && (
-            <View className="flex-row mb-5 justify-start">
-              <Image
-                source={{ uri: doctor.image }}
-                style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8, marginTop: 2 }}
-                contentFit="cover"
-              />
-              <View className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl rounded-tl-none p-4 shadow-sm shadow-slate-100/40">
-                <View className="flex-row items-center gap-1.5 py-1 px-2">
-                  <View className="w-2 h-2 bg-text-light dark:bg-text-light-dark rounded-full animate-bounce" />
-                  <View className="w-2 h-2 bg-text-muted dark:bg-text-muted-dark rounded-full animate-bounce" />
-                  <View className="w-2 h-2 bg-text-light dark:bg-text-light-dark rounded-full animate-bounce" />
-                </View>
-              </View>
+        {/* Messages List / Placeholder / Loader */}
+        {loading ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" color="#1565C0" />
+            <Text className="text-xs text-text-muted dark:text-text-muted-dark mt-2 font-bold">Loading messages...</Text>
+          </View>
+        ) : !consultationId ? (
+          <View className="flex-1 justify-center items-center px-8">
+            <View className="w-16 h-16 bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-2xl items-center justify-center mb-4">
+              <Ionicons name="chatbubbles-outline" size={32} color={isDark ? "#64748B" : "#94A3B8"} />
             </View>
-          )}
-        </ScrollView>
+            <Text className="text-sm font-bold text-text-main dark:text-text-main-dark text-center">
+              Chat Session Pending
+            </Text>
+            <Text className="text-xs text-text-muted dark:text-text-muted-dark mt-1 text-center leading-relaxed">
+              This chat session will become active once your online appointment is confirmed by the doctor.
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            ref={scrollViewRef}
+            showsVerticalScrollIndicator={false}
+            className="flex-1 px-6 bg-background dark:bg-background-dark"
+            contentContainerStyle={{ paddingVertical: 20, paddingBottom: 16 }}
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          >
+            {messages.map((msg) => {
+              const isUser = msg.sender === "user";
+              return (
+                <View
+                  key={msg.id}
+                  className={`flex-row mb-5 ${isUser ? "justify-end" : "justify-start"}`}
+                >
+                  {/* Doctor Avatar */}
+                  {!isUser && (
+                    <Image
+                      source={{ uri: doctor.image }}
+                      style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8, marginTop: 2 }}
+                      contentFit="cover"
+                    />
+                  )}
+
+                  <View className="max-w-[78%]">
+                    <View
+                      className={`rounded-[24px] p-4 ${
+                        isUser
+                          ? "bg-primary rounded-tr-none"
+                          : "bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-tl-none shadow-sm shadow-slate-100/40"
+                      }`}
+                    >
+                      {/* Render Image attachment */}
+                      {msg.imageUri && (
+                        <View className="mb-2 rounded-2xl overflow-hidden">
+                          <Image source={{ uri: msg.imageUri }} style={{ width: "100%", height: 160 }} contentFit="cover" />
+                        </View>
+                      )}
+
+                      {/* Render File attachment */}
+                      {msg.fileName && (
+                        <View className={`flex-row items-center p-3 rounded-2xl mb-2 border ${
+                          isUser ? "bg-blue-600/40 border-blue-400/30" : "bg-red-50/50 dark:bg-red-950/30 border-red-100 dark:border-red-900/50"
+                        }`}>
+                          <Ionicons name="document-text" size={24} color={isUser ? "#FFFFFF" : "#EF4444"} />
+                          <View className="ml-3 flex-1">
+                            <Text className={`text-xs font-bold ${isUser ? "text-white" : "text-text-main dark:text-text-main-dark"}`} numberOfLines={1}>
+                              {msg.fileName}
+                            </Text>
+                            <Text className={`text-[9px] font-semibold mt-0.5 ${isUser ? "text-blue-200" : "text-text-light dark:text-text-light-dark"}`}>
+                              {msg.fileSize}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+
+                      {/* Render Audio attachment */}
+                      {msg.audioDuration && (
+                        <View className={`flex-row items-center py-1.5 px-2 rounded-2xl mb-1 ${
+                          isUser ? "bg-blue-600/40" : "bg-primary-light dark:bg-primary-light-dark"
+                        }`} style={{ width: 220 }}>
+                          <TouchableOpacity className={`w-8 h-8 rounded-full items-center justify-center ${
+                            isUser ? "bg-white/20" : "bg-blue-500"
+                          }`}>
+                            <Ionicons name="play" size={14} color="#FFFFFF" style={{ marginLeft: 2 }} />
+                          </TouchableOpacity>
+                          
+                          <View className="flex-row items-center flex-1 mx-3 gap-0.5">
+                            {[3, 2, 5, 3, 4, 3, 2, 4, 3, 5, 2, 3, 4, 2, 3, 4].map((h, i) => (
+                              <View
+                                key={i}
+                                className={`w-0.5 rounded-full ${isUser ? "bg-white" : "bg-text-light dark:bg-text-light-dark"}`}
+                                style={{ height: h * 2.5 }}
+                              />
+                            ))}
+                          </View>
+                          <Text className={`text-[10px] font-bold ${isUser ? "text-blue-100" : "text-text-muted dark:text-text-muted-dark"}`}>
+                            {msg.audioDuration}
+                          </Text>
+                        </View>
+                      )}
+
+                      {/* Text Message */}
+                      {msg.text && (
+                        <Text
+                          className={`text-sm leading-relaxed ${
+                            isUser ? "text-white font-medium" : "text-text-main dark:text-text-main-dark"
+                          }`}
+                        >
+                          {msg.text}
+                        </Text>
+                      )}
+                    </View>
+
+                    <Text
+                      className={`text-[9px] text-text-light dark:text-text-light-dark font-bold mt-1.5 ${
+                        isUser ? "text-right" : "text-left"
+                      }`}
+                    >
+                      {msg.timestamp}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+
+            {/* Doctor Typing Loader */}
+            {isTyping && (
+              <View className="flex-row mb-5 justify-start">
+                <Image
+                  source={{ uri: doctor.image }}
+                  style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8, marginTop: 2 }}
+                  contentFit="cover"
+                />
+                <View className="bg-surface dark:bg-surface-dark border border-border-color dark:border-border-color-dark rounded-3xl rounded-tl-none p-4 shadow-sm shadow-slate-100/40">
+                  <View className="flex-row items-center gap-1.5 py-1 px-2">
+                    <View className="w-2 h-2 bg-text-light dark:bg-text-light-dark rounded-full animate-bounce" />
+                    <View className="w-2 h-2 bg-text-muted dark:bg-text-muted-dark rounded-full animate-bounce" />
+                    <View className="w-2 h-2 bg-text-light dark:bg-text-light-dark rounded-full animate-bounce" />
+                  </View>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        )}
 
         {/* WhatsApp Reusable Chat Input Component */}
-        <ChatInput
-          placeholder={`Message ${doctor.name}...`}
-          onSend={handleSend}
-        />
+        {!!consultationId && (
+          <ChatInput
+            placeholder={`Message ${doctor.name}...`}
+            onSend={handleSend}
+          />
+        )}
       </KeyboardAvoidingView>
 
       {/* VOIP CALL MODAL OVERLAY */}
