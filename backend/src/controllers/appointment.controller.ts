@@ -97,7 +97,6 @@ export const bookAppointment = async (req: Request, res: Response, next: NextFun
     if (partialBlock) {
       return sendBadRequest(res, "The doctor is unavailable during this time slot.");
     }
-
     // 5. No existing appointment occupies this slot for the doctor
     const dayStart = `${dateStr}T00:00:00.000Z`;
     const dayEnd = `${dateStr}T23:59:59.999Z`;
@@ -106,8 +105,9 @@ export const bookAppointment = async (req: Request, res: Response, next: NextFun
       .where({ doctorId })
       .whereIn("status", ["PENDING", "CONFIRMED"])
       .whereBetween("dateTime", [dayStart, dayEnd])
+      .select(db.raw('to_char("dateTime", \'HH24:MI\') as "timeStr"'))
       .then((appts: any[]) => appts.some(a => {
-        const existingMinutes = new Date(a.dateTime).getUTCHours() * 60 + new Date(a.dateTime).getUTCMinutes();
+        const existingMinutes = timeToMinutes(a.timeStr);
         return windowsOverlap(apptMinutes, apptMinutes + slotDuration, existingMinutes, existingMinutes + slotDuration);
       }));
     if (doctorConflict) {
@@ -119,14 +119,14 @@ export const bookAppointment = async (req: Request, res: Response, next: NextFun
       .where({ patientId })
       .whereIn("status", ["PENDING", "CONFIRMED"])
       .whereBetween("dateTime", [dayStart, dayEnd])
+      .select(db.raw('to_char("dateTime", \'HH24:MI\') as "timeStr"'))
       .then((appts: any[]) => appts.some(a => {
-        const existingMinutes = new Date(a.dateTime).getUTCHours() * 60 + new Date(a.dateTime).getUTCMinutes();
+        const existingMinutes = timeToMinutes(a.timeStr);
         return windowsOverlap(apptMinutes, apptMinutes + slotDuration, existingMinutes, existingMinutes + slotDuration);
       }));
     if (patientConflict) {
       return sendBadRequest(res, "You already have an appointment at this time.");
     }
-
     // All checks passed — create the appointment & pending payment atomically
     const appointmentId = crypto.randomUUID();
     const paymentId = crypto.randomUUID();
@@ -163,6 +163,12 @@ export const bookAppointment = async (req: Request, res: Response, next: NextFun
     await db.transaction(async (trx) => {
       await trx("appointments").insert(appointment);
       await trx("payments").insert(payment);
+      await trx("consultations").insert({
+        id: crypto.randomUUID(),
+        appointmentId,
+        createdAt: now,
+        updatedAt: now
+      });
     });
 
     // Send notifications via template engine
@@ -306,10 +312,13 @@ export const confirmAppointment = async (req: Request, res: Response, next: Next
 
     await db.transaction(async (trx) => {
       await trx("appointments").where({ id }).update({ status: "CONFIRMED", updatedAt: new Date().toISOString() });
-      await trx("consultations").insert({
-        id: crypto.randomUUID(),
-        appointmentId: id
-      });
+      const consultationExists = await trx("consultations").where({ appointmentId: id }).first();
+      if (!consultationExists) {
+        await trx("consultations").insert({
+          id: crypto.randomUUID(),
+          appointmentId: id
+        });
+      }
     });
 
     const updated = await AppointmentModel.findById(id);
