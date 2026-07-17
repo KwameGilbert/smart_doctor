@@ -96,21 +96,14 @@ export default function SignupScreen() {
     .then((response) => {
       setLoading(false);
       if (response.status === "success") {
-        showAlert(
-          "Registration Successful",
-          "A verification code has been sent to your email.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                router.replace({
-                  pathname: "/auth/verify",
-                  params: { email: email.trim() },
-                });
-              }
-            }
-          ]
-        );
+        router.replace({
+          pathname: "/auth/verify",
+          params: {
+            email: email.trim(),
+            token: response.data?.token || "",
+            isVerified: response.data?.user?.isVerified ? "true" : "false",
+          },
+        });
       } else {
         showAlert("Registration Failed", response.message || "Could not register account.");
       }
