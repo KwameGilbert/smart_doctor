@@ -75,11 +75,22 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
       );
     }
 
-    const msg = role === "DOCTOR"
-      ? "Registration successful. You can now log in."
-      : "Registration successful. Verification code has been sent.";
+    const token = generateToken({ id: userId, email, role });
 
-    return sendCreated(res, { userId, email, role }, msg);
+    return sendCreated(res, {
+      token,
+      user: {
+        id: userId,
+        email,
+        firstName,
+        lastName,
+        role,
+        phoneNumber,
+        isVerified: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    }, "Registration successful.");
   } catch (error: any) {
     next(error);
   }
