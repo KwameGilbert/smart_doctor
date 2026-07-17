@@ -254,3 +254,129 @@ export const listAllConsultations = async (req: Request, res: Response, next: Ne
     next(err);
   }
 };
+
+/**
+ * GET /consultations
+ * List active consultations/chats for the currently logged in patient or doctor, enriched with last message and unread count.
+ */
+export const listMyConsultations = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const role = req.user!.role;
+
+    const query = db("consultations")
+      .join("appointments", "consultations.appointmentId", "=", "appointments.id")
+      .join("users as patientUser", "appointments.patientId", "=", "patientUser.id")
+      .join("users as doctorUser", "appointments.doctorId", "=", "doctorUser.id")
+      .leftJoin("doctors as doctorProfile", "doctorUser.id", "=", "doctorProfile.userId")
+      .select(
+        "consultations.*",
+        "appointments.dateTime",
+        "appointments.status as appointmentStatus",
+        "patientUser.id as patientId",
+        "patientUser.firstName as patientFirstName",
+        "patientUser.lastName as patientLastName",
+        "patientUser.avatarUrl as patientAvatar",
+        "doctorUser.id as doctorId",
+        "doctorUser.firstName as doctorFirstName",
+        "doctorUser.lastName as doctorLastName",
+        "doctorUser.avatarUrl as doctorAvatar",
+        "doctorProfile.specialty as doctorSpecialty"
+      );
+
+    if (role === "PATIENT") {
+      query.where("appointments.patientId", userId);
+    } else if (role === "DOCTOR") {
+      query.where("appointments.doctorId", userId);
+    }
+
+    query.orderBy("consultations.createdAt", "desc");
+
+    const consultations = await query;
+
+    // Fetch the last message and unread count for each consultation thread
+    const consultationsWithLastMsg = await Promise.all(
+      consultations.map(async (c) => {
+        const lastMessage = await db("messages")
+          .where({ consultationId: c.id })
+          .orderBy("createdAt", "desc")
+          .first();
+
+        const unreadCount = await db("messages")
+          .where({ consultationId: c.id, isRead: false })
+          .whereNot({ senderId: userId })
+          .count("id as count")
+          .first();
+
+        return {
+          ...c,
+          lastMessage: lastMessage || null,
+          unreadCount: Number((unreadCount as any)?.count || 0)
+        };
+      })
+    );
+
+    return sendSuccess(res, consultationsWithLastMsg, "My consultations retrieved.");
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /consultations/partner/:partnerId
+ * Find the latest active consultation thread between the logged-in user and a partner (doctor or patient).
+ * If an appointment exists but no consultation has been created yet, auto-create one.
+ */
+export const getConsultationByPartner = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const { partnerId } = req.params;
+
+    let consultation = await db("consultations")
+      .join("appointments", "consultations.appointmentId", "=", "appointments.id")
+      .select("consultations.*")
+      .where(function () {
+        this.where("appointments.patientId", userId).where("appointments.doctorId", partnerId);
+      })
+      .orWhere(function () {
+        this.where("appointments.patientId", partnerId).where("appointments.doctorId", userId);
+      })
+      .orderBy("consultations.createdAt", "desc")
+      .first();
+
+    // If no consultation found, check if an appointment exists and auto-create one
+    if (!consultation) {
+      const appointment = await db("appointments")
+        .where(function () {
+          this.where("patientId", userId).where("doctorId", partnerId);
+        })
+        .orWhere(function () {
+          this.where("patientId", partnerId).where("doctorId", userId);
+        })
+        .whereNotIn("status", ["CANCELLED", "REJECTED"])
+        .orderBy("createdAt", "desc")
+        .first();
+
+      if (!appointment) {
+        return sendNotFound(res, "No appointment found with this partner.");
+      }
+
+      // Auto-create the consultation for this appointment
+      const now = new Date().toISOString();
+      const newId = crypto.randomUUID();
+      await db("consultations").insert({
+        id: newId,
+        appointmentId: appointment.id,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      consultation = await db("consultations").where({ id: newId }).first();
+    }
+
+    return sendSuccess(res, consultation, "Consultation found.");
+  } catch (err) {
+    next(err);
+  }
+};
+
