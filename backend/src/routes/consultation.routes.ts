@@ -4,6 +4,12 @@ import * as consultCtrl from "../controllers/consultation.controller";
 
 const router = Router();
 
+// Get active consultations list for the logged-in user
+router.get("/", authenticate, consultCtrl.listMyConsultations);
+
+// Find active consultation by partner ID (doctor ID or patient ID)
+router.get("/partner/:partnerId", authenticate, consultCtrl.getConsultationByPartner);
+
 // Get consultation details (ownership-checked inside controller)
 router.get("/:id", authenticate, consultCtrl.getConsultation);
 
