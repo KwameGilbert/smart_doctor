@@ -18,6 +18,8 @@ export default function VerifyScreen() {
   const isDark = colorScheme === "dark";
   const params = useLocalSearchParams();
   const emailParam = (params.email as string) || "";
+  const tokenParam = (params.token as string) || "";
+  const isVerifiedParam = params.isVerified === "true";
 
   const [emailOrPhone, setEmailOrPhone] = useState(emailParam);
   const [code, setCode] = useState("");
@@ -27,13 +29,18 @@ export default function VerifyScreen() {
 
   useEffect(() => {
     const checkToken = async () => {
+      if (tokenParam && isVerifiedParam) {
+        await tokenStorage.saveToken(tokenParam);
+        router.replace("/home");
+        return;
+      }
       const token = await tokenStorage.getToken();
       if (token) {
         router.replace("/home");
       }
     };
     checkToken();
-  }, []);
+  }, [tokenParam, isVerifiedParam]);
 
   useEffect(() => {
     if (emailParam) {
