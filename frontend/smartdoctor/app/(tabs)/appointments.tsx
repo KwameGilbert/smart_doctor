@@ -61,6 +61,7 @@ export default function AppointmentsScreen() {
 
   const [availableSlotsData, setAvailableSlotsData] = useState<{ date: string; slots: string[] }[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [selectedDoctorDetail, setSelectedDoctorDetail] = useState<any>(null);
 
   const formatSlotTo12Hr = (time24: string) => {
     if (!time24) return "";
@@ -214,9 +215,21 @@ export default function AppointmentsScreen() {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setSchedulerStep("booking");
       fetchDoctorSlots(doctorId, false);
+
+      // Load details of the selected doctor dynamically
+      userApi.getDoctorDetail(doctorId)
+        .then((response) => {
+          if (response.status === "success" && response.data) {
+            setSelectedDoctorDetail(response.data);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching doctor detail in booking scheduler:", err);
+        });
     } else {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setSchedulerStep(null);
+      setSelectedDoctorDetail(null);
     }
   }, [doctorId]);
 
@@ -336,7 +349,7 @@ export default function AppointmentsScreen() {
 
   // If in scheduling subflow
   if (schedulerStep === "booking") {
-    const selectedDoctor = ALL_DOCTORS.find((d) => d.id === doctorId) || ALL_DOCTORS[0];
+    const selectedDoctor = selectedDoctorDetail || ALL_DOCTORS.find((d) => d.id === doctorId) || ALL_DOCTORS[0];
     return (
       <SafeAreaView className="flex-1 bg-surface dark:bg-surface-dark" edges={["top"]}>
         {/* Header */}
@@ -515,7 +528,7 @@ export default function AppointmentsScreen() {
 
   // If in Success screen
   if (schedulerStep === "success") {
-    const selectedDoctor = ALL_DOCTORS.find((d) => d.id === doctorId) || ALL_DOCTORS[0];
+    const selectedDoctor = selectedDoctorDetail || ALL_DOCTORS.find((d) => d.id === doctorId) || ALL_DOCTORS[0];
     return (
       <SafeAreaView className="flex-1 bg-surface dark:bg-surface-dark items-center justify-center p-8">
         <View className="w-20 h-20 bg-green-50 dark:bg-green-950/30 rounded-full items-center justify-center mb-6 border border-green-100 dark:border-green-900/50">
