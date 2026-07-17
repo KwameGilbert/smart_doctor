@@ -84,7 +84,11 @@ export default function LoginScreen() {
               onPress: () => {
                 router.push({
                   pathname: "/auth/verify",
-                  params: { email: emailOrPhone.trim() },
+                  params: {
+                    email: emailOrPhone.trim(),
+                    token: response.data?.token || "",
+                    isVerified: response.data?.isVerified ? "true" : "false"
+                  },
                 });
               },
             },
