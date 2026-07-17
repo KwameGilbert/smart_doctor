@@ -62,9 +62,15 @@ export default function ForgotPasswordScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "space-between",
+          paddingHorizontal: 32,
+          paddingBottom: 32,
+          paddingTop: 16,
+        }}
         keyboardShouldPersistTaps="handled"
-        className="px-8 pb-8 pt-4 justify-between"
+        className="flex-1"
       >
         {!isSuccess ? (
           <View className="flex-1 justify-between">
