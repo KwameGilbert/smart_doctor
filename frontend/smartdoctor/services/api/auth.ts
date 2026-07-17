@@ -52,9 +52,9 @@ export interface LoginData {
 }
 
 export interface RegisterData {
-  userId: string;
-  email: string;
-  role: string;
+  token?: string;
+  isVerified?: boolean;
+  user?: User;
 }
 
 export const authApi = {
