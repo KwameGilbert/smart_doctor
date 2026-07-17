@@ -18,6 +18,8 @@ import { router } from "expo-router";
 import { consultationApi, ConsultationResponse } from "../services/api/consultation";
 import { socketService } from "../services/api/socket";
 
+import { userApi } from "../services/api/user";
+
 // Enable LayoutAnimation on Android
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -46,15 +48,22 @@ export default function DoctorChatsScreen() {
   const isDark = colorScheme === "dark";
 
   const [chats, setChats] = useState<ConsultationResponse[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchChats = async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
-      const response = await consultationApi.listMyConsultations();
-      if (response.status === "success" && response.data) {
-        setChats(response.data);
+      const [chatsRes, userRes] = await Promise.all([
+        consultationApi.listMyConsultations(),
+        userApi.getProfile()
+      ]);
+      if (chatsRes.status === "success" && chatsRes.data) {
+        setChats(chatsRes.data);
+      }
+      if (userRes.status === "success" && userRes.data) {
+        setCurrentUser(userRes.data);
       }
     } catch (error) {
       console.error("Error fetching chats:", error);
@@ -137,54 +146,67 @@ export default function DoctorChatsScreen() {
             </View>
           ) : (
             chats.map((chat) => {
-              const docName = `Dr. ${chat.doctorFirstName} ${chat.doctorLastName}`;
+              const isDoctor = currentUser?.role === "DOCTOR";
+              
+              // If I am the doctor, my partner is the patient. If I am the patient, my partner is the doctor.
+              const partnerId = isDoctor ? chat.patientId : chat.doctorId;
+              const partnerName = isDoctor 
+                ? `${chat.patientFirstName} ${chat.patientLastName}`
+                : `Dr. ${chat.doctorFirstName} ${chat.doctorLastName}`;
+              const partnerAvatar = isDoctor ? chat.patientAvatar : chat.doctorAvatar;
+
               return (
                 <TouchableOpacity
                   key={chat.id}
-                  onPress={() => router.push(`/doctor-chat/${chat.doctorId}` as any)}
+                  onPress={() => router.push(`/doctor-chat/${partnerId}` as any)}
                   activeOpacity={0.7}
                   className="flex-row items-center px-6 py-3.5 border-b border-border-color dark:border-border-color-dark"
                 >
-                  {/* Doctor Avatar */}
+                  {/* Partner Avatar */}
                   <View className="relative">
                     <Image
-                      source={{ uri: chat.doctorAvatar || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=150" }}
-                      style={{ width: 52, height: 52, borderRadius: 26 }}
+                      source={{ uri: partnerAvatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=150" }}
+                      style={{ width: 50, height: 50, borderRadius: 25 }}
+                      className="bg-slate-200 dark:bg-slate-800"
                       contentFit="cover"
                     />
+                    {chat.unreadCount > 0 && (
+                      <View className="absolute -top-1 -right-1 bg-green-500 w-4 h-4 rounded-full items-center justify-center border-2 border-surface dark:border-surface-dark">
+                        <Text className="text-[9px] text-white font-bold">{chat.unreadCount}</Text>
+                      </View>
+                    )}
                   </View>
 
-                  {/* Chat details */}
-                  <View className="flex-1 ml-4 justify-center pr-1">
-                    <View className="flex-row justify-between items-baseline">
-                      <Text className="text-[15px] font-bold text-text-main dark:text-text-main-dark leading-snug">
-                        {docName}
+                  {/* Chat Content */}
+                  <View className="flex-1 ml-4">
+                    <View className="flex-row justify-between items-center mb-1">
+                      <Text className="text-base font-bold text-text-main dark:text-text-main-dark" numberOfLines={1}>
+                        {partnerName}
                       </Text>
-                      <Text className={`text-[11px] ${chat.unreadCount > 0 ? "text-[#25D366] font-bold" : "text-text-light dark:text-text-light-dark"}`}>
-                        {formatMessageTime(chat.lastMessage?.createdAt)}
+                      <Text className="text-xs text-text-light dark:text-text-light-dark">
+                        {formatMessageTime(chat.lastMessage?.createdAt || chat.createdAt)}
                       </Text>
                     </View>
-                    <Text className="text-[11px] text-primary mt-0.5 font-semibold">
-                      {chat.doctorSpecialty || "General Doctor"}
-                    </Text>
-                    <Text
-                      className={`text-sm mt-1 leading-snug ${
-                        chat.unreadCount > 0 ? "text-text-main dark:text-text-main-dark font-semibold" : "text-text-muted dark:text-text-muted-dark font-normal"
-                      }`}
-                      numberOfLines={1}
-                    >
-                      {chat.lastMessage?.content || "No messages yet"}
-                    </Text>
+                    <View className="flex-row items-center">
+                      {chat.lastMessage && chat.lastMessage.senderId === currentUser?.id && (
+                        <Ionicons 
+                          name="checkmark-done" 
+                          size={16} 
+                          color={chat.lastMessage.status === "READ" ? "#3B82F6" : "#94A3B8"} 
+                          style={{ marginRight: 4 }} 
+                        />
+                      )}
+                      <Text 
+                        className={`flex-1 text-sm ${chat.unreadCount > 0 ? "font-semibold text-text-main dark:text-text-main-dark" : "text-text-muted dark:text-text-muted-dark"}`}
+                        numberOfLines={1}
+                      >
+                        {chat.lastMessage 
+                          ? (chat.lastMessage.content || (chat.lastMessage.attachmentType ? `Sent a ${chat.lastMessage.attachmentType.toLowerCase()}` : "Sent a message"))
+                          : `Started a consultation session`
+                        }
+                      </Text>
+                    </View>
                   </View>
-
-                  {/* Unread count badge */}
-                  {chat.unreadCount > 0 && (
-                    <View className="w-5 h-5 bg-[#25D366] rounded-full items-center justify-center ml-2">
-                      <Text className="text-white text-[10px] font-bold">
-                        {chat.unreadCount}
-                      </Text>
-                    </View>
-                  )}
                 </TouchableOpacity>
               );
             })

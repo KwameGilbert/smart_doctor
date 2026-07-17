@@ -1,5 +1,6 @@
 import db from "../config/db";
 import { BaseModel } from "./base.model";
+import crypto from "crypto";
 
 export interface User {
   id: string;
@@ -259,6 +260,16 @@ export class UserModelClass extends BaseModel<User> {
           rating: 0.0,
           status: "APPROVED"
         });
+
+        const defaultAvailabilities = [1, 2, 3, 4, 5].map(day => ({
+          id: crypto.randomUUID(),
+          doctorId: user.id,
+          dayOfWeek: day,
+          startTime: "09:00",
+          endTime: "17:00",
+          isAvailable: true
+        }));
+        await trx("doctorAvailabilities").insert(defaultAvailabilities);
       }
 
       return user;

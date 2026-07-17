@@ -43,6 +43,7 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
       return sendBadRequest(res, "Either message content or an attachment is required.");
     }
 
+    const now = new Date().toISOString();
     const message = await MessageModel.create({
       id: crypto.randomUUID(),
       consultationId,
@@ -50,7 +51,8 @@ export const sendMessage = async (req: Request, res: Response, next: NextFunctio
       content: hasContent ? content.trim() : null,
       attachmentUrl: attachmentUrl || null,
       attachmentType: attachmentType || null,
-      status: "SENT"
+      status: "SENT",
+      createdAt: now
     });
 
     // Fetch sender info to enrich the live WebSocket payload
@@ -215,7 +217,7 @@ export const markAllAsRead = async (req: Request, res: Response, next: NextFunct
       .update({
         status: "READ",
         readAt: now,
-        deliveredAt: db.raw("COALESCE(deliveredAt, ?)", [now])
+        deliveredAt: db.raw('COALESCE("deliveredAt", ?)', [now])
       });
 
     // Notify participants via WebSocket

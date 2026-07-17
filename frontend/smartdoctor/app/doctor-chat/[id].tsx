@@ -84,22 +84,6 @@ export default function DoctorChatScreen() {
     patientIdRef.current = patientId;
   }, [patientId]);
 
-  // Fetch doctor details
-  useEffect(() => {
-    if (typeof id === "string") {
-      userApi.getDoctorDetail(id)
-        .then((response) => {
-          if (response.status === "success" && response.data) {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-            setDoctor(response.data);
-          }
-        })
-        .catch((err) => {
-          console.error("Error fetching doctor detail in chat:", err);
-        });
-    }
-  }, [id]);
-
   // Initialize Chat (Fetch profile, consultation, and messages)
   useEffect(() => {
     if (!id || typeof id !== "string") return;
@@ -107,21 +91,30 @@ export default function DoctorChatScreen() {
     const initChat = async () => {
       try {
         setLoading(true);
-        // 1. Get logged in patient profile
+        // 1. Get logged in user profile
         const profileRes = await userApi.getProfile();
         if (profileRes.status !== "success" || !profileRes.data) {
           console.error("Failed to load user profile for chat");
           setLoading(false);
           return;
         }
-        const patId = profileRes.data.id;
-        setPatientId(patId);
+        const currentUser = profileRes.data;
+        setPatientId(currentUser.id); // For the mapBackendMessage
 
-        // 2. Find active consultation by doctor ID
+        // 2. Find active consultation by partner ID
         const consultRes = await consultationApi.getConsultationByPartner(id);
         if (consultRes.status === "success" && consultRes.data) {
           const cId = consultRes.data.id;
           setConsultationId(cId);
+
+          const cData = consultRes.data;
+          const isDoctor = currentUser.role === "DOCTOR";
+          setDoctor({
+            id: id,
+            name: isDoctor ? `${cData.patientFirstName} ${cData.patientLastName}` : `Dr. ${cData.doctorFirstName} ${cData.doctorLastName}`,
+            image: isDoctor ? (cData.patientAvatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=150") : (cData.doctorAvatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=150"),
+            specialty: isDoctor ? "Patient" : (cData.doctorSpecialty || "General Doctor"),
+          });
 
           // Mark messages as read
           consultationApi.markAsRead(cId).catch((err) => console.log("Error marking as read:", err));
@@ -129,14 +122,14 @@ export default function DoctorChatScreen() {
           // 3. Load historical messages
           const messagesRes = await consultationApi.getMessages(cId, 1, 100);
           if (messagesRes.status === "success" && messagesRes.data) {
-            const mapped = messagesRes.data.messages.map((msg) => mapBackendMessage(msg, patId));
+            const mapped = messagesRes.data.messages.map((msg) => mapBackendMessage(msg, currentUser.id));
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setMessages(mapped);
             setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: false }), 200);
           }
         }
       } catch (err) {
-        console.error("Error initializing doctor chat screen:", err);
+        console.error("Error initializing chat screen:", err);
       } finally {
         setLoading(false);
       }
